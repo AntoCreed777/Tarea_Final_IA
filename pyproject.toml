@@ -1,0 +1,23 @@
+[project]
+name = "Tarea_Final_IA"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "", email = ""},
+]
+dependencies = []
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
+
+[dependency-groups]
+dev = [
+    "black>=25.11.0",
+    "isort>=7.0.0",
+    "pydocstyle>=6.3.0",
+    "pre-commit>=4.5.0",
+]

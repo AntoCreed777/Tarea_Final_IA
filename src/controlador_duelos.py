@@ -1,0 +1,152 @@
+import random
+
+from src.elecciones import Elecciones
+from src.strategies import base_strategies
+
+
+class ControladorDuelos:
+    """
+    Controlador encargado de ejecutar múltiples torneos y administrar los duelos
+    entre estrategias del dilema del prisionero iterado.
+
+    Esta clase coordina la asignación aleatoria de enfrentamientos, la cantidad
+    variable de jugadas por duelo, la notificación de nuevos oponentes y la
+    asignación de recompensas según las reglas definidas.
+
+    Atributos:
+        estrategias_a_enfrentar (list[base_strategies]):
+            Conjunto de estrategias participantes en los torneos.
+        cantidad_de_torneos (int):
+            Número total de torneos que se ejecutarán.
+        jugadas_base_duelo (int):
+            Cantidad base de rondas por duelo antes de aplicar variaciones.
+        limite_de_variacion_de_jugadas (int):
+            Valor máximo de variación positiva o negativa sobre la cantidad base
+            de jugadas por duelo.
+    """
+
+    def __init__(
+        self,
+        estrategias_a_enfrentar: list[base_strategies],
+        cantidad_de_torneos: int,
+        jugadas_base_duelo: int,
+        limite_de_variacion_de_jugadas: int,
+    ):
+        """
+        Inicializa el controlador validando los parámetros principales del
+        torneo y almacenando las estrategias que participarán.
+
+        Args:
+            estrategias_a_enfrentar (list[base_strategies]):
+                Lista de estrategias que participarán en todos los torneos.
+            cantidad_de_torneos (int):
+                Cantidad total de torneos a realizar.
+            jugadas_base_duelo (int):
+                Número base de jugadas por duelo.
+            limite_de_variacion_de_jugadas (int):
+                Variación máxima (positiva o negativa) respecto al número base.
+
+        Raises:
+            ValueError: Si la cantidad de estrategias es menor a 2.
+            ValueError: Si la cantidad de torneos es menor o igual a 0.
+            ValueError: Si el número base de jugadas es menor a 5.
+            ValueError: Si la variación de jugadas es mayor o igual al número base.
+        """
+        if len(estrategias_a_enfrentar) < 2:
+            raise ValueError("Deben de haber como minimo 2 estrategias para enfrentar.")
+
+        self.estrategias_a_enfrentar = estrategias_a_enfrentar
+
+        if cantidad_de_torneos <= 0:
+            raise ValueError("La cantidad de torneos debe de ser igual o mayor a 1.")
+
+        self.cantidad_de_torneos = cantidad_de_torneos
+
+        if jugadas_base_duelo < 5:
+            raise ValueError(
+                "La cantidad de jugadas base debe ser un número mayor o igual a 5."
+            )
+
+        self.jugadas_base_duelo = jugadas_base_duelo
+
+        if limite_de_variacion_de_jugadas >= jugadas_base_duelo:
+            raise ValueError(
+                "El límite de variación de jugadas no puede ser igual o superior "
+                "a la cantidad de jugadas base."
+            )
+
+        self.limite_de_variacion_de_jugadas = limite_de_variacion_de_jugadas
+
+    def iniciar_duelos(self):
+        """
+        Ejecuta todos los torneos configurados.
+
+        Para cada torneo:
+        - Se clona la lista de estrategias participantes.
+        - Se seleccionan pares aleatorios de estrategias para enfrentarse.
+        - Cada estrategia es notificada del inicio de un nuevo enfrentamiento.
+        - La cantidad de jugadas del duelo se determina aplicando variación aleatoria.
+        - En cada jugada, ambas estrategias toman decisiones, reciben información
+          sobre la decisión del oponente y luego se asignan recompensas.
+
+        El proceso continúa hasta que no queden estrategias sin enfrentar dentro
+        del torneo.
+        """
+        for _ in range(self.cantidad_de_torneos):
+            aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
+
+            # Emparejar estrategias mientras queden al menos dos
+            while len(aux_estrategias_a_enfrentar) > 1:
+                e1, e2 = random.sample(aux_estrategias_a_enfrentar, 2)
+
+                aux_estrategias_a_enfrentar.remove(e1)
+                aux_estrategias_a_enfrentar.remove(e2)
+
+                e1.notificar_nuevo_oponente()
+                e2.notificar_nuevo_oponente()
+
+                # Determinar número de jugadas del duelo
+                cantidad_jugadas = self.jugadas_base_duelo + random.randint(
+                    -self.limite_de_variacion_de_jugadas,
+                    self.limite_de_variacion_de_jugadas,
+                )
+
+                for _ in range(cantidad_jugadas):
+                    eleccion1 = e1.realizar_eleccion()
+                    eleccion2 = e2.realizar_eleccion()
+
+                    e1.recibir_eleccion_del_oponente(eleccion2)
+                    e2.recibir_eleccion_del_oponente(eleccion1)
+
+                    self.otorgar_recompensas(e1, e2, eleccion1, eleccion2)
+
+    def otorgar_recompensas(self, e1, e2, c1, c2):
+        """
+        Asigna recompensas a ambas estrategias según las reglas clásicas del
+        dilema del prisionero iterado.
+
+        Reglas aplicadas:
+            - Cooperar / Cooperar → +3 para ambos
+            - Cooperar / Traicionar → +0 para el primero, +5 para el segundo
+            - Traicionar / Cooperar → +5 para el primero, +0 para el segundo
+            - Traicionar / Traicionar → +1 para ambos
+
+        Args:
+            e1, e2: Estrategias participantes del duelo.
+            c1, c2 (Elecciones): Elecciones tomadas por cada estrategia.
+        """
+        if c1 == Elecciones.COOPERAR and c2 == Elecciones.COOPERAR:
+            e1.recibir_recompensa(3)
+            e2.recibir_recompensa(3)
+
+        elif c1 == Elecciones.COOPERAR and c2 == Elecciones.TRAICIONAR:
+            e1.recibir_recompensa(0)
+            e2.recibir_recompensa(5)
+
+        elif c1 == Elecciones.TRAICIONAR and c2 == Elecciones.COOPERAR:
+            e1.recibir_recompensa(5)
+            e2.recibir_recompensa(0)
+
+        else:
+            e1.recibir_recompensa(1)
+            e2.recibir_recompensa(1)
