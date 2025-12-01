@@ -15,7 +15,14 @@ if __name__ == "__main__":
         Feld(),
         Grofman(),
         Joss(),
-        QLearning(),
+        QLearning(
+            tamaño_estado=100,
+            alpha=0.2,
+            gamma=0.8,
+            start_epsilon=0.5,
+            end_epsilon=0.1,
+            rounds_of_decay_epsilon=500,
+        ),
     ]
 
     torneo = ControladorDuelos(
@@ -26,7 +33,3 @@ if __name__ == "__main__":
     )
 
     torneo.iniciar_duelos()
-
-    print("\nRESULTADOS")
-    for e in sorted(estrategias, key=lambda est: est.puntaje, reverse=True):
-        print(type(e).__name__, "→", "{:,}".format(e.puntaje))  # Con separador de miles

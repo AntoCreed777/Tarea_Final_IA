@@ -28,7 +28,9 @@ class QLearning(base_strategies):
         tamaño_estado: int = 5,
         alpha: float = 0.1,
         gamma: float = 0.9,
-        epsilon: float = 0.1,
+        start_epsilon: float = 0.5,
+        end_epsilon: float = 0.1,
+        rounds_of_decay_epsilon: int = 100,
     ):
         """
         Inicializa el agente Q-Learning.
@@ -47,7 +49,18 @@ class QLearning(base_strategies):
         self.tamaño_estado = tamaño_estado
         self.alpha = alpha
         self.gamma = gamma
-        self.epsilon = epsilon
+
+        if start_epsilon < end_epsilon:
+            raise ValueError("start_epsilon debe de ser mayor o igual a end_epsilon")
+
+        if rounds_of_decay_epsilon < 1:
+            raise ValueError("rounds_of_decay_epsilon debe de ser mayor o igual a 1")
+
+        self.start_epsilon = start_epsilon
+        self.end_epsilon = end_epsilon
+        self.tasa_de_decrecimiento_de_epsilon = (
+            start_epsilon - end_epsilon
+        ) / rounds_of_decay_epsilon
 
         self._iniciar_variables()
 
@@ -59,6 +72,7 @@ class QLearning(base_strategies):
         self.historial: list[Jugada] = []
         self.ultimo_estado: Estado | None = None
         self.ultima_accion: Accion | None = None
+        self.epsilon = self.start_epsilon
 
     def _estado_actual(self) -> Estado:
         """
@@ -120,6 +134,9 @@ class QLearning(base_strategies):
 
         self.ultimo_estado = estado
         self.ultima_accion = accion
+
+        self.epsilon -= self.tasa_de_decrecimiento_de_epsilon
+        self.epsilon = max(self.epsilon, self.end_epsilon)
 
         return accion
 

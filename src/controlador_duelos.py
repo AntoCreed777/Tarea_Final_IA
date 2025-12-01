@@ -127,6 +127,17 @@ class ControladorDuelos:
                 """
                 executor.map(lambda args: self.duelo(*args), duelos)
 
+            self._mostrar_puntajes()
+            print("\n\n")
+
+    def _mostrar_puntajes(self):
+        for e in sorted(
+            self.estrategias_a_enfrentar, key=lambda est: est.puntaje, reverse=True
+        ):
+            print(
+                type(e).__name__, "→", "{:,}".format(e.puntaje)
+            )  # Con separador de miles
+
     def duelo(
         self,
         estrategia1: base_strategies,
