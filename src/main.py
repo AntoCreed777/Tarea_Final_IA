@@ -1,6 +1,7 @@
 from src.controlador_duelos import ControladorDuelos
-from src.strategies import (Davis, Downing, Feld, Grofman, Joss, Random,
-                            SiempreCoopera, SiempreTraiciona, TitForTat)
+from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
+                            Random, SiempreCoopera, SiempreTraiciona,
+                            TitForTat)
 
 if __name__ == "__main__":
 
@@ -14,13 +15,14 @@ if __name__ == "__main__":
         Feld(),
         Grofman(),
         Joss(),
+        QLearning(),
     ]
 
     torneo = ControladorDuelos(
         estrategias,
-        cantidad_de_torneos=10,
-        jugadas_base_duelo=500,
-        limite_de_variacion_de_jugadas=50,
+        cantidad_de_torneos=1000,
+        jugadas_base_duelo=5000,
+        limite_de_variacion_de_jugadas=500,
     )
 
     torneo.iniciar_duelos()

@@ -93,7 +93,8 @@ class ControladorDuelos:
         El proceso continúa hasta que no queden estrategias sin enfrentar dentro
         del torneo.
         """
-        for _ in range(self.cantidad_de_torneos):
+        for i in range(self.cantidad_de_torneos):
+            print(f"Torneo {i+1} iniciado.")
             aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
             duelos = []
 

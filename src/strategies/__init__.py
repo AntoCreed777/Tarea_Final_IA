@@ -4,6 +4,7 @@ from .downing import Downing
 from .feld import Feld
 from .grofman import Grofman
 from .joss import Joss
+from .q_learning import QLearning
 from .random import Random
 from .siempre_coopera import SiempreCoopera
 from .siempre_traiciona import SiempreTraiciona
@@ -20,4 +21,5 @@ __all__ = [
     "Feld",
     "Grofman",
     "Joss",
+    "QLearning",
 ]
