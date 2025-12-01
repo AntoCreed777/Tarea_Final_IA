@@ -173,3 +173,6 @@ class QLearning(base_strategies):
         Reinicia el agente para un nuevo enfrentamiento.
         """
         self._iniciar_variables()
+
+    def __str__(self):
+        return f"\033[33m{super().__str__()}\033[0m"  # Color Amarillo

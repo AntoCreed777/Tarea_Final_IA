@@ -43,3 +43,6 @@ class SiempreTraiciona(base_strategies):
         realizar ningún tipo de inicialización adicional.
         """
         pass
+
+    def __str__(self):
+        return f"\033[31m{super().__str__()}\033[0m"  # Color Rojo

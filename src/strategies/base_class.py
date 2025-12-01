@@ -70,3 +70,6 @@ class base_strategies(ABC):
         cualquier estado interno relativo al oponente anterior.
         """
         pass
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__} → {self.puntaje:,}"  # Con separador de miles

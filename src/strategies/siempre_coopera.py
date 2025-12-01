@@ -44,3 +44,6 @@ class SiempreCoopera(base_strategies):
         requiere inicialización adicional.
         """
         pass
+
+    def __str__(self):
+        return f"\033[32m{super().__str__()}\033[0m"  # Color Verde
