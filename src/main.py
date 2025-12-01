@@ -1,5 +1,5 @@
 from src.controlador_duelos import ControladorDuelos
-from src.strategies import (Davis, Downing, Feld, Grofman, Random,
+from src.strategies import (Davis, Downing, Feld, Grofman, Joss, Random,
                             SiempreCoopera, SiempreTraiciona, TitForTat)
 
 if __name__ == "__main__":
@@ -13,6 +13,7 @@ if __name__ == "__main__":
         Downing(),
         Feld(),
         Grofman(),
+        Joss(),
     ]
 
     torneo = ControladorDuelos(
