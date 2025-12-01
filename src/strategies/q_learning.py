@@ -16,11 +16,21 @@ class QLearning(base_strategies):
     """
     Estrategia basada en Q-Learning para el dilema del prisionero iterado.
 
-    Esta implementación aprende una política óptima aproximada observando
-    las interacciones anteriores. El estado está compuesto por las últimas
-    N jugadas (mi movimiento, movimiento del oponente). A partir de ese estado,
-    el agente elige una acción usando una política epsilon-greedy y actualiza
-    la Q-Table con las recompensas obtenidas.
+    Este agente aprende una política aproximada utilizando el algoritmo
+    Q-Learning. El estado se define como una tupla que contiene las últimas
+    N jugadas observadas, donde cada jugada es un par:
+        (mi_movimiento, movimiento_oponente).
+
+    La política utilizada es epsilon-greedy:
+    - Con probabilidad epsilon se elige una acción aleatoria (exploración).
+    - Con probabilidad (1 - epsilon) se elige la acción con mayor valor Q
+      (explotación), según los valores almacenados en la Q-Table.
+
+    Ademas, epsilon decrece de manera lineal desde un epsilon inicial hasta
+    un epsilon final. Esto implica que, conforme avanzan las iteraciones,
+    el agente reduce progresivamente la exploración y aumenta la
+    explotación de los valores Q aprendidos, privilegiando decisiones
+    basadas en la experiencia acumulada.
     """
 
     def __init__(
@@ -33,13 +43,46 @@ class QLearning(base_strategies):
         rounds_of_decay_epsilon: int = 100,
     ):
         """
-        Inicializa el agente Q-Learning.
+        Inicializa los hiperparámetros del agente Q-Learning.
 
         Parámetros:
-        - tamaño_estado (int): cantidad de jugadas previas que definen el estado.
-        - alpha (float): tasa de aprendizaje [0,1].
-        - gamma (float): descuento futuro para Q-Learning [0,1].
-        - epsilon (float): probabilidad de exploración en epsilon-greedy [0,1].
+        - tamaño_estado (int):
+            Número de jugadas previas incluidas en el estado (N > 0).
+
+        - alpha (float):
+            Tasa de aprendizaje ∈ [0,1]. Controla cuánto se incorporan
+            nuevas observaciones a los valores Q existentes.
+
+        - gamma (float):
+            Factor de descuento ∈ [0,1] para las recompensas futuras.
+
+        - start_epsilon (float):
+            Probabilidad inicial de exploración para la política epsilon-greedy ∈ [0,1].
+
+        - end_epsilon (float):
+            Valor mínimo permitido para epsilon al finalizar el decaimiento ∈ [0,1].
+
+        - rounds_of_decay_epsilon (int):
+            Cantidad de iteraciones durante las cuales epsilon decrece de
+            manera lineal desde start_epsilon hasta end_epsilon.
+
+        Nota importante:
+        ----------------
+        El parámetro rounds_of_decay_epsilon no se reinicia al comenzar un nuevo duelo.
+        Por lo tanto, su valor debe considerarse respecto al número total
+        estimado de decisiones que tomará el agente a lo largo de todos los torneos y duelos.
+
+        Recomendación:
+        --------------
+        Para un torneo compuesto por:
+            - T torneos,
+            - J jugadas por duelo,
+
+        un valor razonable es:
+            rounds_of_decay_epsilon ≈ T * J * 0.4
+
+        Esto permite que la fase de exploración dure una fracción suficiente
+        del total de interacciones antes de estabilizarse en end_epsilon.
         """
         super().__init__()
 
@@ -56,7 +99,7 @@ class QLearning(base_strategies):
         if rounds_of_decay_epsilon < 1:
             raise ValueError("rounds_of_decay_epsilon debe de ser mayor o igual a 1")
 
-        self.start_epsilon = start_epsilon
+        self.epsilon = start_epsilon
         self.end_epsilon = end_epsilon
         self.tasa_de_decrecimiento_de_epsilon = (
             start_epsilon - end_epsilon
@@ -72,7 +115,6 @@ class QLearning(base_strategies):
         self.historial: list[Jugada] = []
         self.ultimo_estado: Estado | None = None
         self.ultima_accion: Accion | None = None
-        self.epsilon = self.start_epsilon
 
     def _estado_actual(self) -> Estado:
         """

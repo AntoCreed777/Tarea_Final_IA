@@ -21,7 +21,7 @@ if __name__ == "__main__":
             gamma=0.8,
             start_epsilon=0.5,
             end_epsilon=0.1,
-            rounds_of_decay_epsilon=500,
+            rounds_of_decay_epsilon=(5000 * 1000 * 0.4),
         ),
     ]
 
