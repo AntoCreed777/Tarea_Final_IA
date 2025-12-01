@@ -1,6 +1,6 @@
 from src.controlador_duelos import ControladorDuelos
-from src.strategies import (Davis, Random, SiempreCoopera, SiempreTraiciona,
-                            TitForTat)
+from src.strategies import (Davis, Downing, Random, SiempreCoopera,
+                            SiempreTraiciona, TitForTat)
 
 if __name__ == "__main__":
 
@@ -10,13 +10,14 @@ if __name__ == "__main__":
         TitForTat(),
         Random(),
         Davis(),
+        Downing(),
     ]
 
     torneo = ControladorDuelos(
         estrategias,
-        cantidad_de_torneos=100,
-        jugadas_base_duelo=5000,
-        limite_de_variacion_de_jugadas=500,
+        cantidad_de_torneos=10,
+        jugadas_base_duelo=500,
+        limite_de_variacion_de_jugadas=50,
     )
 
     torneo.iniciar_duelos()

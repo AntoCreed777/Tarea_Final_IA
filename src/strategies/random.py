@@ -27,7 +27,7 @@ class Random(base_strategies):
         """
         return random.choice(list(Elecciones))
 
-    def recibir_eleccion_del_oponente(self, eleccion) -> None:
+    def recibir_eleccion_del_oponente(self, eleccion: Elecciones) -> None:
         """
         Recibe la elección del oponente.
 

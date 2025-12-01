@@ -25,7 +25,7 @@ class SiempreTraiciona(base_strategies):
         """
         return Elecciones.TRAICIONAR
 
-    def recibir_eleccion_del_oponente(self, eleccion):
+    def recibir_eleccion_del_oponente(self, eleccion: Elecciones):
         """
         Recibe la elección del oponente, pero esta estrategia no utiliza
         dicha información ni modifica su comportamiento.

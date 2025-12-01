@@ -26,7 +26,7 @@ class SiempreCoopera(base_strategies):
         """
         return Elecciones.COOPERAR
 
-    def recibir_eleccion_del_oponente(self, eleccion) -> None:
+    def recibir_eleccion_del_oponente(self, eleccion: Elecciones) -> None:
         """
         Recibe la elección del oponente. Esta estrategia no utiliza dicha
         información, por lo que no realiza ninguna operación.
