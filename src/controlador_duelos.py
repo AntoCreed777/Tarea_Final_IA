@@ -1,4 +1,5 @@
 import random
+from concurrent.futures import ThreadPoolExecutor
 
 from src.elecciones import Elecciones
 from src.strategies import base_strategies
@@ -94,6 +95,7 @@ class ControladorDuelos:
         """
         for _ in range(self.cantidad_de_torneos):
             aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
+            duelos = []
 
             # Emparejar estrategias mientras queden al menos dos
             while len(aux_estrategias_a_enfrentar) > 1:
@@ -111,14 +113,46 @@ class ControladorDuelos:
                     self.limite_de_variacion_de_jugadas,
                 )
 
-                for _ in range(cantidad_jugadas):
-                    eleccion1 = e1.realizar_eleccion()
-                    eleccion2 = e2.realizar_eleccion()
+                duelos.append((e1, e2, cantidad_jugadas))
 
-                    e1.recibir_eleccion_del_oponente(eleccion2)
-                    e2.recibir_eleccion_del_oponente(eleccion1)
+            # Paralelizar los duelos
+            with ThreadPoolExecutor() as executor:
+                """
+                Ejecuta todos los duelos en paralelo usando hilos.
 
-                    self.otorgar_recompensas(e1, e2, eleccion1, eleccion2)
+                Cada duelo se pasa como argumento a la función `duelo`.
+                ThreadPoolExecutor se encarga de crear hilos y esperar que
+                todos los duelos terminen antes de continuar con el siguiente torneo.
+                """
+                executor.map(lambda args: self.duelo(*args), duelos)
+
+    def duelo(
+        self,
+        estrategia1: base_strategies,
+        estrategia2: base_strategies,
+        cantidad_jugadas: int,
+    ):
+        """
+        Ejecuta un duelo entre dos estrategias durante un número determinado de jugadas.
+
+        Para cada jugada:
+        - Cada estrategia realiza su elección (Cooperar o Traicionar).
+        - Cada estrategia recibe la elección del oponente.
+        - Se asignan recompensas según las reglas del dilema del prisionero iterado.
+
+        Args:
+            estrategia1 (base_strategies): Primera estrategia participante en el duelo.
+            estrategia2 (base_strategies): Segunda estrategia participante en el duelo.
+            cantidad_jugadas (int): Número total de rondas que se jugarán en este duelo.
+        """
+        for _ in range(cantidad_jugadas):
+            eleccion1 = estrategia1.realizar_eleccion()
+            eleccion2 = estrategia2.realizar_eleccion()
+
+            estrategia1.recibir_eleccion_del_oponente(eleccion2)
+            estrategia2.recibir_eleccion_del_oponente(eleccion1)
+
+            self.otorgar_recompensas(estrategia1, estrategia2, eleccion1, eleccion2)
 
     def otorgar_recompensas(self, e1, e2, c1, c2):
         """

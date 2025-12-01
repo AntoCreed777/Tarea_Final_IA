@@ -26,5 +26,5 @@ if __name__ == "__main__":
     torneo.iniciar_duelos()
 
     print("\nRESULTADOS")
-    for e in estrategias:
+    for e in sorted(estrategias, key=lambda est: est.puntaje, reverse=True):
         print(type(e).__name__, "→", "{:,}".format(e.puntaje))  # Con separador de miles
