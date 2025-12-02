@@ -1,14 +1,9 @@
 from .base_class import base_strategies
-from .davis import Davis
-from .downing import Downing
-from .feld import Feld
-from .grofman import Grofman
-from .joss import Joss
-from .q_learning import QLearning
+from .originales import Davis, Downing, Feld, Grofman, Joss, TitForTat
 from .random import Random
+from .RL import QLearning
 from .siempre_coopera import SiempreCoopera
 from .siempre_traiciona import SiempreTraiciona
-from .tit_for_tat import TitForTat
 
 __all__ = [
     "base_strategies",
