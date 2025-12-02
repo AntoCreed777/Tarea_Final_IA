@@ -1,3 +1,5 @@
+import random
+
 from src.controlador_duelos import ControladorDuelos
 from src.selectores_de_oponentes import SelectorPvP, SelectorRandom
 from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
@@ -5,6 +7,7 @@ from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
                             TitForTat)
 
 if __name__ == "__main__":
+    random.seed(42)
 
     cantidad_de_torneos = 1000
     jugadas_base_duelo = 5000
