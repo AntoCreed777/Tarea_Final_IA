@@ -58,7 +58,8 @@ class SelectorPvP(BaseSelectorDeOponentes):
           automáticamente.
         """
         # Crear calendario si no existe
-        if not self.rondas:
+        if not self.rondas or all(not r for r in self.rondas):
+            self.ronda_actual = 0
             self._generar_rondas(estrategias)
 
         # Reinicio de calendario si se completó
