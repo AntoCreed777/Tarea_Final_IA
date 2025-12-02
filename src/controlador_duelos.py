@@ -97,7 +97,7 @@ class ControladorDuelos:
         del torneo.
         """
         for i in range(self.cantidad_de_torneos):
-            print("-" * 10, f"Torneo {i+1} iniciado", "-" * 10)
+            print(f"\033[1;97m{'-' * 10} Torneo {i+1} iniciado {'-' * 10}\033[0m")
 
             aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
             duelos = []
@@ -126,13 +126,26 @@ class ControladorDuelos:
                 executor.map(lambda args: self.duelo(*args), duelos)
 
             self._mostrar_puntajes()
-            print("\n")
+
+            for e in self.estrategias_a_enfrentar:
+                e.notificar_nuevo_torneo()
 
     def _mostrar_puntajes(self):
+        print("\n", "-" * 5, "Puntajes Acumulados", "-" * 5)
         for e in sorted(
             self.estrategias_a_enfrentar, key=lambda est: est.puntaje, reverse=True
         ):
-            print(e)
+            print(e.get_puntaje_acumulado())
+
+        print("\n", "-" * 5, "Puntajes del Torneo Actual", "-" * 5)
+        for e in sorted(
+            self.estrategias_a_enfrentar,
+            key=lambda est: est.puntaje_torneo_actual,
+            reverse=True,
+        ):
+            print(e.get_puntaje_de_este_torneo())
+
+        print("\n\n")
 
     def duelo(
         self,

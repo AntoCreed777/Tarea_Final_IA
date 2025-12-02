@@ -22,6 +22,7 @@ class base_strategies(ABC):
         de múltiples interacciones con distintos oponentes.
         """
         self.puntaje = 0
+        self.puntaje_torneo_actual = 0
 
     @abstractmethod
     def realizar_eleccion(self) -> Elecciones:
@@ -60,6 +61,7 @@ class base_strategies(ABC):
                               simulación según el resultado del turno.
         """
         self.puntaje += recompensa
+        self.puntaje_torneo_actual += recompensa
 
     @abstractmethod
     def notificar_nuevo_oponente(self) -> None:
@@ -71,5 +73,14 @@ class base_strategies(ABC):
         """
         pass
 
-    def __str__(self) -> str:
-        return f"{type(self).__name__} → {self.puntaje:,}"  # Con separador de miles
+    def notificar_nuevo_torneo(self):
+        self.puntaje_torneo_actual = 0
+
+    def get_puntaje_acumulado(self) -> str:
+        return self._formateado_puntaje(self.puntaje)
+
+    def get_puntaje_de_este_torneo(self) -> str:
+        return self._formateado_puntaje(self.puntaje_torneo_actual)
+
+    def _formateado_puntaje(self, puntaje: int):
+        return f"{type(self).__name__} → {puntaje:,}"

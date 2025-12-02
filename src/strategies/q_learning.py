@@ -216,5 +216,12 @@ class QLearning(base_strategies):
         """
         self._iniciar_variables()
 
-    def __str__(self):
-        return f"\033[33m{super().__str__()}\033[0m"  # Color Amarillo
+    def get_puntaje_acumulado(self) -> str:
+        return (
+            "\033[33m" f"{super().get_puntaje_acumulado()}" "\033[0m"
+        )  # Color Amarillo
+
+    def get_puntaje_de_este_torneo(self) -> str:
+        return (
+            "\033[33m" f"{super().get_puntaje_de_este_torneo()}" "\033[0m"
+        )  # Color Amarillo

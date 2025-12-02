@@ -44,5 +44,10 @@ class SiempreTraiciona(base_strategies):
         """
         pass
 
-    def __str__(self):
-        return f"\033[31m{super().__str__()}\033[0m"  # Color Rojo
+    def get_puntaje_acumulado(self) -> str:
+        return "\033[31m" f"{super().get_puntaje_acumulado()}" "\033[0m"  # Color Rojo
+
+    def get_puntaje_de_este_torneo(self) -> str:
+        return (
+            "\033[31m" f"{super().get_puntaje_de_este_torneo()}" "\033[0m"
+        )  # Color Rojo
