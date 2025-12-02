@@ -6,6 +6,10 @@ from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
 
 if __name__ == "__main__":
 
+    cantidad_de_torneos = 1000
+    jugadas_base_duelo = 5000
+    limite_de_variacion_de_jugadas = 500
+
     estrategias = [
         SiempreCoopera(),
         SiempreTraiciona(),
@@ -22,15 +26,15 @@ if __name__ == "__main__":
             gamma=0.8,
             start_epsilon=0.5,
             end_epsilon=0.1,
-            rounds_of_decay_epsilon=int(5000 * 1000 * 0.4),
+            rounds_of_decay_epsilon=int(cantidad_de_torneos * jugadas_base_duelo * 0.4),
         ),
     ]
 
     torneo = ControladorDuelos(
-        estrategias_a_enfrentar=estrategias,
-        cantidad_de_torneos=1000,
-        jugadas_base_duelo=5000,
-        limite_de_variacion_de_jugadas=500,
+        estrategias,
+        cantidad_de_torneos,
+        jugadas_base_duelo,
+        limite_de_variacion_de_jugadas,
         selector_de_oponentes=SelectorPvP(),
     )
 

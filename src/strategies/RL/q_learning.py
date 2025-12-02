@@ -105,13 +105,14 @@ class QLearning(base_strategies):
             start_epsilon - end_epsilon
         ) / rounds_of_decay_epsilon
 
+        self.q_table: QTable = {}
+
         self._iniciar_variables()
 
     def _iniciar_variables(self):
         """
         Reinicia todas las variables internas para comenzar contra un nuevo oponente.
         """
-        self.q_table: QTable = {}
         self.historial: list[Jugada] = []
         self.ultimo_estado: Estado | None = None
         self.ultima_accion: Accion | None = None
