@@ -2,6 +2,7 @@ import random
 from concurrent.futures import ThreadPoolExecutor
 
 from src.elecciones import Elecciones
+from src.selectores_de_oponentes import BaseSelectorDeOponentes
 from src.strategies import base_strategies
 
 
@@ -32,6 +33,7 @@ class ControladorDuelos:
         cantidad_de_torneos: int,
         jugadas_base_duelo: int,
         limite_de_variacion_de_jugadas: int,
+        selector_de_oponentes: BaseSelectorDeOponentes,
     ):
         """
         Inicializa el controlador validando los parámetros principales del
@@ -77,6 +79,7 @@ class ControladorDuelos:
             )
 
         self.limite_de_variacion_de_jugadas = limite_de_variacion_de_jugadas
+        self.selector_de_oponentes = selector_de_oponentes
 
     def iniciar_duelos(self):
         """
@@ -99,23 +102,17 @@ class ControladorDuelos:
             aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
             duelos = []
 
-            # Emparejar estrategias mientras queden al menos dos
-            while len(aux_estrategias_a_enfrentar) > 1:
-                e1, e2 = random.sample(aux_estrategias_a_enfrentar, 2)
+            (e1, e2), termino = self.selector_de_oponentes.seleccionar(
+                aux_estrategias_a_enfrentar
+            )
 
-                aux_estrategias_a_enfrentar.remove(e1)
-                aux_estrategias_a_enfrentar.remove(e2)
+            self._preparar_duelo(e1, e2, duelos)
 
-                e1.notificar_nuevo_oponente()
-                e2.notificar_nuevo_oponente()
-
-                # Determinar número de jugadas del duelo
-                cantidad_jugadas = self.jugadas_base_duelo + random.randint(
-                    -self.limite_de_variacion_de_jugadas,
-                    self.limite_de_variacion_de_jugadas,
+            while not termino:
+                (e1, e2), termino = self.selector_de_oponentes.seleccionar(
+                    aux_estrategias_a_enfrentar
                 )
-
-                duelos.append((e1, e2, cantidad_jugadas))
+                self._preparar_duelo(e1, e2, duelos)
 
             # Paralelizar los duelos
             with ThreadPoolExecutor() as executor:
@@ -164,6 +161,23 @@ class ControladorDuelos:
             estrategia2.recibir_eleccion_del_oponente(eleccion1)
 
             self.otorgar_recompensas(estrategia1, estrategia2, eleccion1, eleccion2)
+
+    def _preparar_duelo(
+        self,
+        e1: base_strategies,
+        e2: base_strategies,
+        duelos: list[tuple[base_strategies, base_strategies, int]],
+    ):
+        e1.notificar_nuevo_oponente()
+        e2.notificar_nuevo_oponente()
+
+        # Determinar número de jugadas del duelo
+        cantidad_jugadas = self.jugadas_base_duelo + random.randint(
+            -self.limite_de_variacion_de_jugadas,
+            self.limite_de_variacion_de_jugadas,
+        )
+
+        duelos.append((e1, e2, cantidad_jugadas))
 
     def otorgar_recompensas(self, e1, e2, c1, c2):
         """
