@@ -1,5 +1,8 @@
 import random
 
+import os
+import pickle
+
 from src.elecciones import Elecciones
 from src.strategies.base_class import base_strategies
 
@@ -226,3 +229,17 @@ class QLearning(base_strategies):
         return (
             "\033[33m" f"{super().get_puntaje_de_este_torneo()}" "\033[0m"
         )  # Color Amarillo
+
+    def export_QTable(self, file : str) -> None:
+
+        # Crear carpeta si no existe
+        os.makedirs("QTables", exist_ok=True)
+
+        with open(f"Qtables/{file}.pkl", "wb") as f:
+            pickle.dump(self.q_table, f)
+
+    def import_QTable(self, file : str) -> None:
+        with open(f"{file}.pkl", "rb") as f:
+            self.q_table = pickle.load(f)
+
+

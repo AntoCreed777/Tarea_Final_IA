@@ -1,7 +1,7 @@
 from .base_class import base_strategies
 from .originales import Davis, Downing, Feld, Grofman, Joss, TitForTat
 from .random import Random
-from .RL import QLearning
+from .RL import QLearning, SARSA
 from .siempre_coopera import SiempreCoopera
 from .siempre_traiciona import SiempreTraiciona
 
@@ -17,4 +17,5 @@ __all__ = [
     "Grofman",
     "Joss",
     "QLearning",
+    "SARSA",
 ]
