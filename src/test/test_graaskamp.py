@@ -1,5 +1,5 @@
 import pytest
-from src.strategies.graaskamp import Graaskamp
+from src.strategies.originales.graaskamp import Graaskamp
 from src.elecciones import Elecciones
 
 def test_initial_cooperate_and_51_betray_then_tft_window():
@@ -33,6 +33,7 @@ def test_detects_random_opponent_and_always_betrays_after_detection():
     # Should detect as random and betray
     assert g._chequear_tipo_oponente()
     assert g.realizar_eleccion() == Elecciones.TRAICIONAR
+    assert g.oponente_es_random == True
 
     # Remain betraying when considered random
     g.cooperaciones_oponente = 15

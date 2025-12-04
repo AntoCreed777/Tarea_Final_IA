@@ -1,5 +1,5 @@
 import pytest
-from src.strategies.tideman_chieruzzi import TidemanChieruzzi
+from src.strategies.originales.tideman_chieruzzi import TidemanChieruzzi
 from src.elecciones import Elecciones
 
 def test_initial_choice_is_cooperate():

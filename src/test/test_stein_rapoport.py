@@ -1,9 +1,9 @@
 import types
 import pytest
-from src.strategies.stein_rapoport import SteinRapoport
+from src.strategies.originales.stein_rapoport import SteinRapoport
 from src.elecciones import Elecciones
 
-import src.strategies.stein_rapoport as stein_mod
+import src.strategies.originales.stein_rapoport as stein_mod
 
 
 def advance_rounds(agent: SteinRapoport, n: int, reward: int = 0):

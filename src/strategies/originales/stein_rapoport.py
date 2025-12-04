@@ -64,7 +64,7 @@ class SteinRapoport(base_strategies):
         
         # chequear con Chi-Cuadrado cada 15 rondas
         if self.ronda % 15 == 0:
-            p_value = chisquare([self.cooperaciones_oponente, self.traiciones_oponente]).pvalue
+            _, p_value = chisquare([self.cooperaciones_oponente, self.traiciones_oponente])
             self.oponente_es_random = p_value >= self.alfa
 
         # traicionar las últimas 2 rondas de cada tanda (13 y 14)

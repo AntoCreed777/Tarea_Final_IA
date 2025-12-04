@@ -34,6 +34,6 @@ ____
 |10| FirstByDowning           | Leslie Downing                             | RevisedDowning       |
 |11| Feld                     | Scott Feld                                 | Feld                 |
 |12| Joss                     | Johann Joss                                | Joss                 |
-| | Tullock                  | Gordon Tullock                             | Tullock              |
-| | (Name withheld)          | Unknown                                    | UnnamedStrategy      |
+|  | Tullock                  | Gordon Tullock                             | Tullock              |
+|  | (Name withheld)          | Unknown                                    | UnnamedStrategy      |
 |15| Random                   | Unknown                                    | Random               |

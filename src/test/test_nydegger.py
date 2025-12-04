@@ -1,5 +1,5 @@
 import pytest
-from src.strategies.nydegger import Nydegger
+from src.strategies.originales.nydegger import Nydegger
 from src.elecciones import Elecciones
 
 def test_tft_first_moves_basic():
