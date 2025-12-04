@@ -30,10 +30,10 @@ ____
 |6 | Stein and Rapoport       | Stein and Anatol Rapoport                  | SteinAndRapoport     |
 |7 | Grudger                  | James W. Friedman                          | Grudger              |
 |8 | Davis                    | Morton Davis                               | Davis                |
-|  | Graaskamp                | Jim Graaskamp                              | Graaskamp            |
+|9 | Graaskamp                | Jim Graaskamp                              | Graaskamp            |
 |10| FirstByDowning           | Leslie Downing                             | RevisedDowning       |
 |11| Feld                     | Scott Feld                                 | Feld                 |
 |12| Joss                     | Johann Joss                                | Joss                 |
-|  | Tullock                  | Gordon Tullock                             | Tullock              |
-|  | (Name withheld)          | Unknown                                    | UnnamedStrategy      |
+|13| Tullock                  | Gordon Tullock                             | Tullock              |
+|14| (Name withheld)          | Unknown                                    | UnnamedStrategy      |
 |15| Random                   | Unknown                                    | Random               |

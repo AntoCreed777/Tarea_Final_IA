@@ -2,9 +2,7 @@ import random
 
 from src.controlador_duelos import ControladorDuelos
 from src.selectores_de_oponentes import SelectorPvP, SelectorRandom
-from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
-                            Random, SiempreCoopera, SiempreTraiciona,
-                            TitForTat)
+from src.strategies import *
 
 if __name__ == "__main__":
     random.seed(42)
@@ -16,13 +14,21 @@ if __name__ == "__main__":
     estrategias = [
         SiempreCoopera(),
         SiempreTraiciona(),
-        TitForTat(),
-        Random(),
+        Anonymous(),
         Davis(),
         Downing(),
         Feld(),
+        Graaskamp(),
         Grofman(),
+        Grudger(),
         Joss(),
+        Nydegger(),
+        Random(),
+        Shubik(),
+        SteinRapoport(),
+        TidemanChieruzzi(),
+        TitForTat(),
+        Tullock(),
         QLearning(
             tamaño_estado=100,
             alpha=0.2,
@@ -30,7 +36,7 @@ if __name__ == "__main__":
             start_epsilon=0.5,
             end_epsilon=0.1,
             rounds_of_decay_epsilon=int(cantidad_de_torneos * jugadas_base_duelo * 0.4),
-        ),
+        )
     ]
 
     torneo = ControladorDuelos(
