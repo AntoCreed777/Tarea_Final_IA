@@ -115,5 +115,6 @@ class SteinRapoport(base_strategies):
             recompensa (int): Recompensa asignada por el motor de simulación
                               según el resultado del turno.
         """
+        self.puntaje_torneo_actual += recompensa
         self.puntaje += recompensa
         self.ronda += 1

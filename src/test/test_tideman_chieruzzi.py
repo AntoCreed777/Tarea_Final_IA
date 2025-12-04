@@ -10,7 +10,7 @@ def test_initial_choice_is_cooperate():
     assert s.ultima_respuesta_oponente == Elecciones.COOPERAR
 
 
-def test_single_defection_triggers_one_retalation():
+def test_single_defection_triggers_one_retaliation():
     s = TidemanChieruzzi()
     # first round: strategy would cooperate
     assert s.realizar_eleccion() == Elecciones.COOPERAR
@@ -168,4 +168,8 @@ def test_largo_duelo_updates_as_average_of_previous_duels():
     assert s.ronda == 2
     s.notificar_nuevo_oponente()
     assert s.largo_duelo == (3 + 5 + 2) / 3  # average of [3, 5, 2]
+
+# Alias to satisfy runner nodeid with the misspelling
+def test_single_defection_triggers_one_retalation():
+    test_single_defection_triggers_one_retaliation()
 
