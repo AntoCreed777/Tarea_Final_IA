@@ -132,18 +132,22 @@ class ControladorDuelos:
 
     def _mostrar_puntajes(self):
         print("\n", "-" * 5, "Puntajes Acumulados", "-" * 5)
-        for e in sorted(
-            self.estrategias_a_enfrentar, key=lambda est: est.puntaje, reverse=True
+        for idx, e in enumerate(
+            sorted(self.estrategias_a_enfrentar, key=lambda est: est.puntaje, reverse=True),
+            start=1,
         ):
-            print(e.get_puntaje_acumulado())
+            print(f"{idx:02d}. {e.get_puntaje_acumulado()}")
 
         print("\n", "-" * 5, "Puntajes del Torneo Actual", "-" * 5)
-        for e in sorted(
-            self.estrategias_a_enfrentar,
-            key=lambda est: est.puntaje_torneo_actual,
-            reverse=True,
+        for idx, e in enumerate(
+            sorted(
+                self.estrategias_a_enfrentar,
+                key=lambda est: est.puntaje_torneo_actual,
+                reverse=True,
+            ),
+            start=1,
         ):
-            print(e.get_puntaje_de_este_torneo())
+            print(f"{idx:02d}. {e.get_puntaje_de_este_torneo()}")
 
         print("\n\n")
 
