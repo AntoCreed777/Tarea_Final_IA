@@ -5,43 +5,33 @@ from src.selectores_de_oponentes import SelectorAllForOne
 from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
                             Random, SiempreCoopera, SiempreTraiciona,
                             TitForTat, SARSA)
+from src.strategies.RL.Estados import StatState, HistoryState
+from src.strategies.RL.politicas import EpsilonGreedy
 
 if __name__ == "__main__":
     #random.seed(42)
 
     cantidad_de_torneos = 100
-    jugadas_base_duelo = 500
-    limite_de_variacion_de_jugadas = 50
+    jugadas_base_duelo = 100
+    limite_de_variacion_de_jugadas = 10
 
     estrategias = [
-        SiempreCoopera(),
-        SiempreTraiciona(),
         TitForTat(),
-        Random(),
-        Davis(),
-        Downing(),
-        Feld(),
-        Grofman(),
-        Joss(),
     ]
 
     protas = [
         QLearning(
-            tamaño_estado=50,
+            EpsilonGreedy(start_epsilon=1.0),
+            StatState(),
             alpha=0.2,
-            gamma= float(1-(1/jugadas_base_duelo)),
-            start_epsilon=0.8,
-            end_epsilon=0.4,
-            rounds_of_decay_epsilon=int(cantidad_de_torneos * jugadas_base_duelo * 0.4),
+            gamma= float(1-(1/jugadas_base_duelo))
         ),
         SARSA(
-            tamaño_estado=50,
+            EpsilonGreedy(start_epsilon=1.0),
+            StatState(),
             alpha=0.2,
-            gamma=float(1-(1/jugadas_base_duelo)),
-            start_epsilon=0.8,
-            end_epsilon=0.4,
-            rounds_of_decay_epsilon=int(cantidad_de_torneos * jugadas_base_duelo * 0.4),
-        ),
+            gamma=float(1 - (1 / jugadas_base_duelo))
+        )
     ]
 
     for prota in protas:
@@ -56,4 +46,4 @@ if __name__ == "__main__":
                 selector_de_oponentes=SelectorAllForOne(prota),
         )
         torneo.iniciar_duelos()
-        prota.export_QTable(f"{prota.__class__.__name__}")
+        prota.export_QTable(f"{prota.__class__.__name__}+TFT2")

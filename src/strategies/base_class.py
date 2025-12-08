@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from src.elecciones import Elecciones
 
+from threading import Lock
+
 
 class base_strategies(ABC):
     """
@@ -23,6 +25,7 @@ class base_strategies(ABC):
         """
         self.puntaje = 0
         self.puntaje_torneo_actual = 0
+        self._jugando = Lock()
 
     @abstractmethod
     def realizar_eleccion(self) -> Elecciones:

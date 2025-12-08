@@ -166,6 +166,14 @@ class ControladorDuelos:
             estrategia2 (base_strategies): Segunda estrategia participante en el duelo.
             cantidad_jugadas (int): Número total de rondas que se jugarán en este duelo.
         """
+        first, second = sorted([estrategia1, estrategia2], key = id)
+
+        first._jugando.acquire()
+        second._jugando.acquire()
+
+        estrategia1.notificar_nuevo_oponente()
+        estrategia2.notificar_nuevo_oponente()
+
         for _ in range(cantidad_jugadas):
             eleccion1 = estrategia1.realizar_eleccion()
             eleccion2 = estrategia2.realizar_eleccion()
@@ -175,15 +183,15 @@ class ControladorDuelos:
 
             self.otorgar_recompensas(estrategia1, estrategia2, eleccion1, eleccion2)
 
+        first._jugando.release()
+        second._jugando.release()
+
     def _preparar_duelo(
         self,
         e1: base_strategies,
         e2: base_strategies,
         duelos: list[tuple[base_strategies, base_strategies, int]],
     ):
-        e1.notificar_nuevo_oponente()
-        e2.notificar_nuevo_oponente()
-
         # Determinar número de jugadas del duelo
         cantidad_jugadas = self.jugadas_base_duelo + random.randint(
             -self.limite_de_variacion_de_jugadas,

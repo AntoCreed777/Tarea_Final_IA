@@ -37,6 +37,12 @@ class SelectorAllForOne(BaseSelectorDeOponentes):
         if len(estrategias) < 1:
             raise ValueError("Debe haber mínimo 1 estrategia para elegir.")
 
+        #duelos = []
+        #for estrategia in estrategias:
+         #   duelos.append((self.protagonista, estrategia))
+
+       # return duelos
+
         # Inicializar ciclo si terminó
         if self.termino:
             self.por_enfrentar = estrategias.copy()
