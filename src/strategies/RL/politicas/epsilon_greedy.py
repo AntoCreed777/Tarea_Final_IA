@@ -3,12 +3,19 @@ from src.strategies.RL.politicas.policy import *
 
 
 class EpsilonGreedy(Policy):
+    """
+    Politica de Epsilon Greedy que decrece, funciona siempre
+    con una posibilidad de escoger una acción random y otra para la mejor opción.
 
+    Se pueden ajustar los parametros para que actue como EpsilonGreedy que no decrece.
+    """
     def __init__(self,
             start_epsilon: float = 0.5,
             end_epsilon: float = 0.1,
             rounds_of_decay_epsilon: int = 100):
         """
+        Args:
+
         - start_epsilon (float):
             Probabilidad inicial de exploración para la política epsilon-greedy ∈ [0,1].
 
@@ -18,6 +25,18 @@ class EpsilonGreedy(Policy):
         - rounds_of_decay_epsilon (int):
             Cantidad de iteraciones durante las cuales epsilon decrece de
             manera lineal desde start_epsilon hasta end_epsilon.
+
+        Recomendación:
+        --------------
+        Para un torneo compuesto por:
+            - T torneos,
+            - J jugadas por duelo,
+
+        un valor razonable es:
+            rounds_of_decay_epsilon ≈ T * J * 0.4
+
+        Esto permite que la fase de exploración dure una fracción suficiente
+        del total de interacciones antes de estabilizarse en end_epsilon.
 
         Nota importante:
         ----------------
@@ -40,22 +59,10 @@ class EpsilonGreedy(Policy):
 
     def eleccion(self, q_table, estado) -> Elecciones:
         """
-
-        :param qtable: Tabla para predeterminar la mejor elcción
-        :param estado: Estado actual en el que se está
-        :return: La elección a escoger
-        Recomendación:
-        --------------
-        Para un torneo compuesto por:
-            - T torneos,
-            - J jugadas por duelo,
-
-        un valor razonable es:
-            rounds_of_decay_epsilon ≈ T * J * 0.4
-
-        Esto permite que la fase de exploración dure una fracción suficiente
-        del total de interacciones antes de estabilizarse en end_epsilon.
+        Elige la acción del agente de forma greedy con una probabilidad
+        de ser random.
         """
+
         if random.random() < self.epsilon:
             return random.choice([Elecciones.COOPERAR, Elecciones.TRAICIONAR])
 

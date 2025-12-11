@@ -81,7 +81,7 @@ class ControladorDuelos:
         self.limite_de_variacion_de_jugadas = limite_de_variacion_de_jugadas
         self.selector_de_oponentes = selector_de_oponentes
 
-    def iniciar_duelos(self):
+    def iniciar_duelos(self, analisis = False, verbose = True):
         """
         Ejecuta todos los torneos configurados.
 
@@ -96,8 +96,12 @@ class ControladorDuelos:
         El proceso continúa hasta que no queden estrategias sin enfrentar dentro
         del torneo.
         """
+        self.puntajes = {estrat.__class__.__name__: [] for estrat in self.estrategias_a_enfrentar}
+
+
         for i in range(self.cantidad_de_torneos):
-            print(f"\033[1;97m{'-' * 10} Torneo {i+1} iniciado {'-' * 10}\033[0m")
+            if verbose == True:
+                print(f"\033[1;97m{'-' * 10} Torneo {i+1} iniciado {'-' * 10}\033[0m")
 
             aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
             duelos = []
@@ -125,10 +129,17 @@ class ControladorDuelos:
                 """
                 executor.map(lambda args: self.duelo(*args), duelos)
 
-            self._mostrar_puntajes()
+            if verbose == True:
+                self._mostrar_puntajes()
+
+            if analisis == True:
+                for e in self.estrategias_a_enfrentar:
+                    self.puntajes[e.__class__.__name__].append(e.puntaje_torneo_actual)
 
             for e in self.estrategias_a_enfrentar:
                 e.notificar_nuevo_torneo()
+
+        return self.puntajes
 
     def _mostrar_puntajes(self):
         print("\n", "-" * 5, "Puntajes Acumulados", "-" * 5)

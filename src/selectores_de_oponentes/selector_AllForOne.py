@@ -7,13 +7,17 @@ from src.strategies import base_strategies
 
 class SelectorAllForOne(BaseSelectorDeOponentes):
     """
-    Selector de oponentes que empareja estrategias de manera aleatoria,
-    garantizando que cada estrategia sea usada exactamente una vez por ciclo.
+    Selector de oponentes que empareja estrategias contra una sola en
+    particular, ideal para medir a una sola estrategia.
     """
 
     def __init__(self, protagonista : base_strategies):
         """
         Inicializa el selector con estado de ciclo terminado.
+
+        Args:
+            protagonista (base_strategies): Estrategia que se va
+            a enfrentar a todos.
         """
         self.protagonista = protagonista
         self.por_enfrentar: list[base_strategies] = []
@@ -21,7 +25,7 @@ class SelectorAllForOne(BaseSelectorDeOponentes):
 
     def seleccionar(self, estrategias):
         """
-        Selecciona dos estrategias aleatorias sin repetición dentro del ciclo.
+        Selecciona una estrategia al azar para enfrentarla al protagonista.
 
         Parámetros
         ----------

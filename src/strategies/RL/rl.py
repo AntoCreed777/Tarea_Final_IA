@@ -5,6 +5,7 @@ from typing import Any
 
 from src.elecciones import Elecciones
 from src.strategies.RL.Estados.controlador_de_estados import GestorEstado
+from src.strategies.RL.politicas import EpsilonGreedy
 from src.strategies.RL.politicas.policy import Policy
 from src.strategies.base_class import base_strategies
 
@@ -32,6 +33,14 @@ class ReinforcementLearning( base_strategies ,ABC):
 
         Parámetros:
 
+        -policy (Policy):
+            Politica que va aplicar el agente para seleccionar sus acciones
+            segun el estado en que este (Ej: Epsilon-Greedy).
+
+        -gestor_estado (GestorEstado):
+            Instancia de un GestorEstado, se encarga de decidir como cambia
+            el estado segun las respustas del entorno a las acciones hechas.
+
         - alpha (float):
             Tasa de aprendizaje ∈ [0,1]. Controla cuánto se incorporan
             nuevas observaciones a los valores Q existentes.
@@ -49,6 +58,10 @@ class ReinforcementLearning( base_strategies ,ABC):
         self.gs = gestor_estado
 
         self.q_table: QTable = {}
+        self._estados_alcanzados = 0
+
+        self.old_alpha = self.alpha
+        self.old_policy = policy
 
         self._iniciar_variables()
 
@@ -69,9 +82,11 @@ class ReinforcementLearning( base_strategies ,ABC):
 
     def _actualizar_estado(self, eleccion: Elecciones):
         """
-        eleccion: La eleccion hecha por el rival que modifica el estado actual
-
         Modifica el estado actual
+
+        Args:
+
+        -eleccion: La eleccion hecha por el rival que modifica el estado actual
         """
         self.gs.actualizar_estado(self.accion_pasada, eleccion)
 
@@ -82,6 +97,7 @@ class ReinforcementLearning( base_strategies ,ABC):
         """
 
         if estado not in self.q_table:
+            self._estados_alcanzados += 1
             self.q_table[estado] = {
                 Elecciones.COOPERAR: 0.0,
                 Elecciones.TRAICIONAR: 0.0,
@@ -120,7 +136,9 @@ class ReinforcementLearning( base_strategies ,ABC):
         self._iniciar_variables()
 
     def export_QTable(self, file : str) -> None:
-
+        """
+        Exporta la QTable para futuros agentes
+        """
         # Crear carpeta si no existe
         os.makedirs("QTables", exist_ok=True)
 
@@ -128,6 +146,41 @@ class ReinforcementLearning( base_strategies ,ABC):
             pickle.dump(self.q_table, f)
 
     def import_QTable(self, file : str) -> None:
+        """
+        Importa la QTable desde un archivo para su uso
+        """
+
         with open(f"{file}.pkl", "rb") as f:
             self.q_table = pickle.load(f)
 
+    def porcentaje_explorado(self) -> float:
+        """
+        Función para calcular la proporción de estados alcanzados en total
+
+        Returns:
+            float: proporcion de estados alcanzados en total
+        """
+        return self._estados_alcanzados / self.gs.total_estados()
+
+    def freeze(self):
+        """
+        Congela el aprendizaje del agente y guarda su configuración
+        de aprendizaje
+        """
+        #Guardar su configuración por si se requiere descongelar el entrenamiento
+        self.old_alpha = self.alpha
+        self.old_policy = self.policy
+
+        #Se setean parametros de decision para solo tomar las mejores decisiones y sin aprender.
+        self.alpha = 0
+        self.policy = EpsilonGreedy(0,0,1)
+
+    def unfreeze(self):
+        """
+
+        Descongela el aprendizaje del agente y recupera su configuración,
+        en caso de que no se haya congelado previamente no pasará nada.
+        """
+        #Se recupera la configuración pasada
+        self.alpha = self.old_alpha
+        self.policy = self.old_policy

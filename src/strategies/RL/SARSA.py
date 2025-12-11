@@ -14,7 +14,7 @@ class SARSA(ReinforcementLearning):
     def _siguiente_eleccion(self) -> Elecciones:
         """
         Elige una acción para la siguiente jugada, guarda el estado y la acción
-        para poder aplicar Q-Learning cuando llegue la respuesta del oponente.
+        para poder aplicar SARSA cuando llegue la respuesta del oponente.
         """
         estado = self._estado_actual()
         accion = self._elegir_accion(estado)
@@ -25,6 +25,9 @@ class SARSA(ReinforcementLearning):
         return accion
 
     def realizar_eleccion(self) -> Elecciones:
+        """
+        Aplica las decisiones que habia tomado previamente
+        """
         self.ultimo_estado = self.siguiente_estado
         self.ultima_accion = self.siguiente_accion
 
@@ -33,7 +36,7 @@ class SARSA(ReinforcementLearning):
     def recibir_eleccion_del_oponente(self, eleccion: Elecciones) -> None:
         """
         Recibe la jugada del oponente, actualiza el historial,
-        calcula la recompensa y aplica la actualización de Q-Learning.
+        calcula la recompensa y aplica la actualización de SARSA.
         """
         if self.ultimo_estado is None or self.ultima_accion is None:
             raise ValueError("Valores nulos cuando no deberían serlo.")
