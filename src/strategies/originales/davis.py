@@ -22,9 +22,9 @@ class Davis(base_strategies):
 
     Atributos:
         rondas_a_cooperar (int):
-            Número de acciones iniciales de cooperación incondicional.
-        cooperaciones_del_oponente (int):
-            Contador de acciones de cooperación realizadas por el oponente.
+            Número de rondas iniciales de cooperación incondicional.
+        ronda_actual (int):
+            Contador de rondas disputadas en el duelo actual.
         traiciones_del_oponente (int):
             Contador de acciones de traición realizadas por el oponente.
         puntaje (int):
@@ -42,7 +42,7 @@ class Davis(base_strategies):
         """
         super().__init__()
         self.rondas_a_cooperar = rondas_a_cooperar
-        self.cooperaciones_del_oponente = 0
+        self.ronda_actual = 0
         self.traiciones_del_oponente = 0
 
     def realizar_eleccion(self) -> Elecciones:
@@ -50,8 +50,7 @@ class Davis(base_strategies):
         Determina la acción de la estrategia en la ronda actual siguiendo las
         reglas de Davis:
 
-        - Si el número de cooperaciones observadas aún es menor que las rondas
-          definidas para cooperación inicial, se coopera.
+                - Durante las primeras `rondas_a_cooperar` rondas, se coopera incondicionalmente.
         - Una vez superado ese umbral:
             * Si el oponente ha traicionado alguna vez, se traiciona.
             * En caso contrario, se mantiene la cooperación.
@@ -59,12 +58,18 @@ class Davis(base_strategies):
         Returns:
             Elecciones: Acción seleccionada para la ronda actual.
         """
-        if self.cooperaciones_del_oponente < self.rondas_a_cooperar:
+        # Avanzar contador de ronda
+        self.ronda_actual += 1
+
+        # Cooperación incondicional durante las primeras N rondas
+        if self.ronda_actual <= self.rondas_a_cooperar:
             return Elecciones.COOPERAR
 
+        # Tras el periodo inicial: si el oponente traicionó alguna vez, traicionar
         if self.traiciones_del_oponente > 0:
             return Elecciones.TRAICIONAR
 
+        # De lo contrario, seguir cooperando
         return Elecciones.COOPERAR
 
     def recibir_eleccion_del_oponente(self, eleccion: Elecciones) -> None:
@@ -75,9 +80,7 @@ class Davis(base_strategies):
         Args:
             eleccion (Elecciones): Acción tomada por el oponente.
         """
-        if eleccion == Elecciones.COOPERAR:
-            self.cooperaciones_del_oponente += 1
-        else:
+        if eleccion == Elecciones.TRAICIONAR:
             self.traiciones_del_oponente += 1
 
     def notificar_nuevo_oponente(self) -> None:
@@ -86,5 +89,5 @@ class Davis(base_strategies):
         oponente completamente nuevo, reiniciando los contadores de acciones
         observadas.
         """
-        self.cooperaciones_del_oponente = 0
+        self.ronda_actual = 0
         self.traiciones_del_oponente = 0
