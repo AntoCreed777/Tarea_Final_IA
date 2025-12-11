@@ -81,7 +81,7 @@ class ControladorDuelos:
         self.limite_de_variacion_de_jugadas = limite_de_variacion_de_jugadas
         self.selector_de_oponentes = selector_de_oponentes
 
-    def iniciar_duelos(self):
+    def iniciar_duelos(self, analisis = False, verbose = True):
         """
         Ejecuta todos los torneos configurados.
 
@@ -96,8 +96,12 @@ class ControladorDuelos:
         El proceso continúa hasta que no queden estrategias sin enfrentar dentro
         del torneo.
         """
+        self.puntajes = {estrat.__class__.__name__: [] for estrat in self.estrategias_a_enfrentar}
+
+
         for i in range(self.cantidad_de_torneos):
-            print(f"\033[1;97m{'-' * 10} Torneo {i+1} iniciado {'-' * 10}\033[0m")
+            if verbose == True:
+                print(f"\033[1;97m{'-' * 10} Torneo {i+1} iniciado {'-' * 10}\033[0m")
 
             aux_estrategias_a_enfrentar = self.estrategias_a_enfrentar.copy()
             duelos = []
@@ -125,10 +129,17 @@ class ControladorDuelos:
                 """
                 executor.map(lambda args: self.duelo(*args), duelos)
 
-            self._mostrar_puntajes()
+            if verbose == True:
+                self._mostrar_puntajes()
+
+            if analisis == True:
+                for e in self.estrategias_a_enfrentar:
+                    self.puntajes[e.__class__.__name__].append(e.puntaje_torneo_actual)
 
             for e in self.estrategias_a_enfrentar:
                 e.notificar_nuevo_torneo()
+
+        return self.puntajes
 
     def _mostrar_puntajes(self):
         print("\n", "-" * 5, "Puntajes Acumulados", "-" * 5)
@@ -170,6 +181,14 @@ class ControladorDuelos:
             estrategia2 (base_strategies): Segunda estrategia participante en el duelo.
             cantidad_jugadas (int): Número total de rondas que se jugarán en este duelo.
         """
+        first, second = sorted([estrategia1, estrategia2], key = id)
+
+        first._jugando.acquire()
+        second._jugando.acquire()
+
+        estrategia1.notificar_nuevo_oponente()
+        estrategia2.notificar_nuevo_oponente()
+
         for _ in range(cantidad_jugadas):
             eleccion1 = estrategia1.realizar_eleccion()
             eleccion2 = estrategia2.realizar_eleccion()
@@ -179,15 +198,15 @@ class ControladorDuelos:
 
             self.otorgar_recompensas(estrategia1, estrategia2, eleccion1, eleccion2)
 
+        first._jugando.release()
+        second._jugando.release()
+
     def _preparar_duelo(
         self,
         e1: base_strategies,
         e2: base_strategies,
         duelos: list[tuple[base_strategies, base_strategies, int]],
     ):
-        e1.notificar_nuevo_oponente()
-        e2.notificar_nuevo_oponente()
-
         # Determinar número de jugadas del duelo
         cantidad_jugadas = self.jugadas_base_duelo + random.randint(
             -self.limite_de_variacion_de_jugadas,

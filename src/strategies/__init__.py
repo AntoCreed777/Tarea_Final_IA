@@ -1,7 +1,6 @@
 from .base_class import base_strategies
 from .originales import *
-
-from .RL import QLearning
+from .RL import  SARSA, QLearning, DeepQNetwork, A2C, DuelingDQN, A2C_LSTM
 from .siempre_coopera import SiempreCoopera
 from .siempre_traiciona import SiempreTraiciona
 
@@ -9,7 +8,6 @@ __all__ = [
     "base_strategies",
     "SiempreCoopera",
     "SiempreTraiciona",
-    "QLearning",
     "TitForTat",
     "Davis",
     "Downing",
@@ -26,4 +24,10 @@ __all__ = [
     "Grudger",
     "Nydegger",
     "Anonymous"
+    "QLearning",
+    "SARSA"
+    "DeepQNetwork",
+    "A2C",
+    "DuelingDQN",
+    "A2C_LSTM",
 ]
