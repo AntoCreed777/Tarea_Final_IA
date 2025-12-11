@@ -120,13 +120,13 @@ class ReinforcementLearning( base_strategies ,ABC):
         CC = 3, CT = 0, TC = 5, TT = 1.
         """
         if mi_accion == Elecciones.COOPERAR and su_accion == Elecciones.COOPERAR:
-            return 3
+            return -1
         if mi_accion == Elecciones.COOPERAR and su_accion == Elecciones.TRAICIONAR:
-            return 0
+            return -10
         if mi_accion == Elecciones.TRAICIONAR and su_accion == Elecciones.COOPERAR:
-            return 5
+            return 0
         if mi_accion == Elecciones.TRAICIONAR and su_accion == Elecciones.TRAICIONAR:
-            return 1
+            return -6
         return 0
 
     def notificar_nuevo_oponente(self) -> None:

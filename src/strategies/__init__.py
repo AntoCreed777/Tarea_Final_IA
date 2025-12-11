@@ -1,7 +1,7 @@
 from .base_class import base_strategies
 from .originales import Davis, Downing, Feld, Grofman, Joss, TitForTat
 from .random import Random
-from .RL import  SARSA, QLearning, DeepQNetwork, A2C
+from .RL import  SARSA, QLearning, DeepQNetwork, A2C, DuelingDQN, A2C_LSTM
 from .siempre_coopera import SiempreCoopera
 from .siempre_traiciona import SiempreTraiciona
 
@@ -20,4 +20,7 @@ __all__ = [
     "SARSA"
     "DeepQNetwork",
     "A2C",
+    "DuelingDQN",
+    "A2C_LSTM",
+
 ]

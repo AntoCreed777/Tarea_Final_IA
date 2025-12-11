@@ -231,7 +231,6 @@ class DeepQNetwork(base_strategies):
                 else torch.device("cpu")
             )
         )
-        print(f"[DQN] Using device: {self.device}")
 
         # Redes: policy y target comparten arquitectura; target se sincroniza con soft update
         input_dim = tamaño_estado * 2 + (2 if use_opponent_context else 0)

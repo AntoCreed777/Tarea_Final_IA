@@ -2,36 +2,43 @@ import random
 
 from src.controlador_duelos import ControladorDuelos
 from src.selectores_de_oponentes import SelectorAllForOne
+from src.selectores_de_oponentes.selector_pvp import SelectorPvP
 from src.strategies import (Davis, Downing, Feld, Grofman, Joss, QLearning,
                             Random, SiempreCoopera, SiempreTraiciona,
-                            TitForTat, SARSA)
-from src.strategies.RL.Estados import StatState, HistoryState
+                            TitForTat, SARSA, DeepQNetwork, A2C, DuelingDQN, A2C_LSTM)
+from src.strategies.RL.Estados import StatState, HistoryState, HistoryStatState
 from src.strategies.RL.politicas import EpsilonGreedy
 
 if __name__ == "__main__":
     #random.seed(42)
 
-    cantidad_de_torneos = 100
+    cantidad_de_torneos = 10
     jugadas_base_duelo = 100
     limite_de_variacion_de_jugadas = 10
 
     estrategias = [
         TitForTat(),
+        SiempreCoopera(),
+        SiempreTraiciona(),
+        Random(),
+        Davis(),
+        Downing(),
+        Feld(),
+        Grofman(),
+        Joss(),
     ]
 
     protas = [
-        QLearning(
-            EpsilonGreedy(start_epsilon=1.0),
-            StatState(),
+        DeepQNetwork(
+            tamaño_estado=20,
             alpha=0.2,
-            gamma= float(1-(1/jugadas_base_duelo))
+            gamma=float(1 - (1 / jugadas_base_duelo)),
+            use_opponent_context=True,
         ),
-        SARSA(
-            EpsilonGreedy(start_epsilon=1.0),
-            StatState(),
-            alpha=0.2,
-            gamma=float(1 - (1 / jugadas_base_duelo))
-        )
+        A2C(),
+        DuelingDQN(),
+        A2C_LSTM(),
+
     ]
 
     for prota in protas:
@@ -46,4 +53,4 @@ if __name__ == "__main__":
                 selector_de_oponentes=SelectorAllForOne(prota),
         )
         torneo.iniciar_duelos()
-        prota.export_QTable(f"{prota.__class__.__name__}+TFT2")
+       # prota.export_QTable(f"{prota.__class__.__name__}+TFT2")
