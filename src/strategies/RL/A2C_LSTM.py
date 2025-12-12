@@ -115,6 +115,7 @@ class A2C_LSTM(base_strategies):
         self.reset_history_on_new_opponent = reset_history_on_new_opponent
 
         self.actual_loss = 0.0
+        self.frozen = False
 
     # --------------------------------------------------------
     #                   ELEGIR ACCIÓN
@@ -172,6 +173,14 @@ class A2C_LSTM(base_strategies):
 
         td_target = r + self.gamma * next_value.item()
         advantage = td_target - self.last_value
+
+        # Si está congelado, no entrenar
+        if self.frozen:
+            self.last_action = None
+            self.last_value = None
+            self.last_state_vec = None
+            self.last_hc = None
+            return
 
         # entrenamiento
         s = torch.tensor(self.last_state_vec, dtype=torch.float32, device=self.device).unsqueeze(0).unsqueeze(0)
@@ -239,7 +248,8 @@ class A2C_LSTM(base_strategies):
         Congela el aprendizaje del agente y guarda su configuración
         de aprendizaje
         """
-        #Guardar su configuración por si se requiere descongelar el entrenamiento
+        self.net.eval()
+        self.frozen = True
         for param in self.net.parameters():
             param.requires_grad = False
 

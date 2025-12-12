@@ -156,6 +156,7 @@ class A2C(base_strategies):
         self.ultima_accion = None
         self.ultimo_valor = None
         self.actual_loss = 0.0
+        self.frozen = False
 
     def realizar_eleccion(self) -> Elecciones:
         """
@@ -221,6 +222,14 @@ class A2C(base_strategies):
 
         # registrar jugada
         self.historial.append((self.ultima_accion, eleccion))
+
+        # Si el agente está congelado, no entrenar
+        if self.frozen:
+            # limpiar últimos para el próximo paso
+            self.ultimo_estado_vec = None
+            self.ultima_accion = None
+            self.ultimo_valor = None
+            return
 
         # bootstrap: obtener valor del nuevo estado
         nuevo_estado_vec = encode_estado(self.historial, self.tamaño_estado)
@@ -291,12 +300,16 @@ class A2C(base_strategies):
         return self.actual_loss
     
     def freeze(self):
-        """Congela los parámetros de la red para evitar más entrenamientos."""
+        """Congela los parámetros y evita pasos de entrenamiento."""
+        self.net.eval()
+        self.frozen = True
         for param in self.net.parameters():
             param.requires_grad = False
     
     def unfreeze(self):
-        """Descongela los parámetros de la red para permitir entrenamientos."""
+        """Descongela los parámetros y permite entrenar nuevamente."""
+        self.net.train()
+        self.frozen = False
         for param in self.net.parameters():
             param.requires_grad = True
 

@@ -232,6 +232,7 @@ class DuelingDQN(base_strategies):
         # loss
         self.loss_fn = nn.SmoothL1Loss()
         self.actual_loss = 0.0
+        self.frozen = False
 
     # -------------------------
     # context features (oponente)
@@ -346,7 +347,7 @@ class DuelingDQN(base_strategies):
     # entrenamiento (Double DQN + Huber loss)
     # -------------------------
     def _train_step(self):
-        if len(self.replay) < self.batch_size:
+        if self.frozen or len(self.replay) < self.batch_size:
             return
 
         # sample
@@ -408,6 +409,8 @@ class DuelingDQN(base_strategies):
         Congela el aprendizaje del agente y guarda su configuración
         de aprendizaje
         """
+        self.policy_net.eval()
+        self.frozen = True
         for param in self.policy_net.parameters():
             param.requires_grad = False
 
@@ -416,6 +419,8 @@ class DuelingDQN(base_strategies):
         Descongela el aprendizaje del agente para reanudar su configuración
         de aprendizaje
         """
+        self.policy_net.train()
+        self.frozen = False
         for param in self.policy_net.parameters():
             param.requires_grad = True
         
