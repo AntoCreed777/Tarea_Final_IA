@@ -15,40 +15,46 @@ from src.strategies.RL.politicas import EpsilonGreedy
 
 
 class Metrica(enum.Enum):
-    PERDIDA = 0
+    PERDIDA = 0,
     EXPLORACION = 1
 
 # ejecutar torneos de entrenamiento para una estrategia dada, y guardar las metricas solicitadas
-def torneos_de_entrenamiento(estrategia, estrategias_a_enfrentar, metrica_a_guardar, episodios_por_torneo=100, cantidad_de_torneos=100, guardado_cada_n_torneos=10):
+def torneos_de_entrenamiento(
+        estrategia, 
+        estrategias_a_enfrentar, 
+        metrica_a_guardar, 
+        episodios_por_torneo=100, 
+        cantidad_repeticiones_de_torneos=100, 
+        cantidad_de_torneos=50,
+        guardado_cada_n_torneos=10, 
+        limite_de_variacion_de_jugadas=0
+        ) -> pd.DataFrame:
 
-    # quitar estrategia de la lista si ya esta
-    if estrategia.__class__.__name__ in estrategias_a_enfrentar:
-        estrategias_a_enfrentar.remove(estrategia.__class__.__name__)
+    estrategias = estrategias_a_enfrentar.copy()
+    estrategias.append(estrategia)
 
     df = pd.DataFrame(columns=["estrategia", "n_torneo", "perdida", "exploracion", "puntaje_torneo", "puntaje_acumulado"])
 
-    puntaje_acumulado = 0
 
     # ejecutar los torneos 1 contra todos
-    for torneo in range(cantidad_de_torneos):
+    for torneo in range(cantidad_repeticiones_de_torneos):
 
         controlador = ControladorDuelos(
-            estrategias_a_enfrentar=estrategias_a_enfrentar,
-            cantidad_de_torneos=1,
+            estrategias_a_enfrentar=estrategias,
+            cantidad_de_torneos=cantidad_de_torneos,
             jugadas_base_duelo=episodios_por_torneo,
-            limite_de_variacion_de_jugadas=0,
+            limite_de_variacion_de_jugadas=limite_de_variacion_de_jugadas,
             selector_de_oponentes=SelectorAllForOne(estrategia)
         )
-        controlador.iniciar_duelos(analisis=False, verbose=True)
-        puntaje_acumulado += estrategia.puntaje_torneo_actual
 
+        analisis = controlador.iniciar_duelos(analisis=True, verbose=False)
 
         # Guardar las métricas cada n torneos
         if (torneo + 1) % guardado_cada_n_torneos == 0:
             fila = {"estrategia": estrategia.__class__.__name__,
                     "n_torneo": torneo + 1,
                     "puntaje_torneo": estrategia.puntaje_torneo_actual,
-                    "puntaje_acumulado": puntaje_acumulado
+                    "puntaje_acumulado": analisis[estrategia.__class__.__name__]
                     }
             
             # Obtener la métrica solicitada; si no existe, no agregar fila
@@ -76,10 +82,11 @@ def torneos_de_entrenamiento(estrategia, estrategias_a_enfrentar, metrica_a_guar
 if __name__ == "__main__":
     #random.seed(42)
 
-    cantidad_de_torneos = 5
-    guardado_cada_n_torneos = 1
-    jugadas_base_duelo = 100
-    limite_de_variacion_de_jugadas = 10
+    cantidad_repeticiones_de_torneos = 1     ## cuantas tandas 
+    cantidad_de_torneos = 1                  ## cuantos torneos por tanda
+    guardado_cada_n_torneos = 1              ## cada cuantos torneos guardar las metricas
+    jugadas_base_duelo = 10                  ## cantidad de jugadas base por duelo
+    limite_de_variacion_de_jugadas = 10      ## limite de variacion aleatoria en la cantidad de jugadas por duelo
 
     estrategias_a_enfrentar = [
         TitForTat(),
@@ -115,31 +122,20 @@ if __name__ == "__main__":
 
     dataf = pd.DataFrame()
 
+    # Ejecutar los torneos de entrenamiento para cada protagonista
     for prota, metrica in protas:
-        # print(type(prota))
-        # enemigos = estrategias.copy()
-        # enemigos.append(prota) #Para visualizar su puntaje, despues se puede mejorar
-        # torneo = ControladorDuelos(
-        #         enemigos,
-        #         cantidad_de_torneos,
-        #         jugadas_base_duelo,
-        #         limite_de_variacion_de_jugadas,
-        #         selector_de_oponentes=SelectorAllForOne(prota),
-        # )
-        # torneo.iniciar_duelos()
-
+      
+        # Ejecutar los torneos de entrenamiento
         resultado = torneos_de_entrenamiento(
             prota,
             estrategias_a_enfrentar,
             metrica, 
+            cantidad_repeticiones_de_torneos=cantidad_repeticiones_de_torneos,
             cantidad_de_torneos=cantidad_de_torneos,
             guardado_cada_n_torneos=guardado_cada_n_torneos
         )
             
         print(resultado)
-
         dataf = pd.concat([dataf, resultado], ignore_index=True)
 
-       # prota.export_QTable(f"{prota.__class__.__name__}+TFT2")
-
-    dataf.to_csv("resultados_arco_de_entrenamiento.csv", index=False)
+    dataf.to_csv("resultados_arco_de_entrenamiento_.csv", index=False)
