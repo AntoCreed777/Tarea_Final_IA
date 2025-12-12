@@ -81,6 +81,9 @@ class ControladorDuelos:
         self.limite_de_variacion_de_jugadas = limite_de_variacion_de_jugadas
         self.selector_de_oponentes = selector_de_oponentes
 
+
+        self.progreso_puntajes = []
+
     def iniciar_duelos(self, analisis = False, verbose = True):
         """
         Ejecuta todos los torneos configurados.
@@ -186,7 +189,6 @@ class ControladorDuelos:
             estrategia2.recibir_eleccion_del_oponente(eleccion1)
 
             self.otorgar_recompensas(estrategia1, estrategia2, eleccion1, eleccion2)
-
 
     def _preparar_duelo(
         self,

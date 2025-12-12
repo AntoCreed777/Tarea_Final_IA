@@ -162,20 +162,15 @@ if __name__ == "__main__":
 
 
     protas = [["DeepQNetwork",Metrica.PERDIDA],
-            ["A2C",Metrica.PERDIDA],
-            ["Dueling_dqn",Metrica.PERDIDA],
-            ["LSTM",Metrica.PERDIDA],
-            ["SARSA",Metrica.EXPLORACION],
-            ["Q",Metrica.EXPLORACION]
     ]
 
     dataf = pd.DataFrame()
-    seeds = [1 , 2, 3, 4]
+    seeds = [1 ]
     tasks = []
     for prota in protas:
         for seed in seeds:
             if prota[1] == Metrica.PERDIDA:
-                tasks.append((prota[0], prota[1] ,seed,1000, 50 ,100, 1))
+                tasks.append((prota[0], prota[1] ,seed,200, 10 ,40, 1))
             else:
                 tasks.append((prota[0], prota[1] ,seed,1000, 50, 100000, 1000))
 
@@ -185,9 +180,8 @@ if __name__ == "__main__":
     n_workers = max(cpu_count() - 2, 1)
     print(f"Usando {n_workers} procesos")
 
-    rows = []
+    # rows = []
     with Pool(n_workers) as pool:
-        for result in tqdm(pool.imap_unordered(torneos_de_entrenamiento, tasks), total=len(tasks)):
-            dataf = pd.concat([dataf, result], ignore_index=True)
+         for result in tqdm(pool.imap_unordered(torneos_de_entrenamiento, tasks), total=len(tasks)):
+             dataf = pd.concat([dataf, result], ignore_index=True)
     dataf.to_csv("resultados_arco_de_entrenamiento_CAMBIAR_NOMBRE.csv", index=False)
-
