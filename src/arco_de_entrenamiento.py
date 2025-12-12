@@ -1,7 +1,10 @@
 import random
+from multiprocessing import Pool, cpu_count
 
 import pandas as pd
 import enum
+
+import tqdm
 
 from src.controlador_duelos import ControladorDuelos
 from src.selectores_de_oponentes import SelectorAllForOne
@@ -19,21 +22,34 @@ class Metrica(enum.Enum):
     EXPLORACION = 1
 
 # ejecutar torneos de entrenamiento para una estrategia dada, y guardar las metricas solicitadas
-def torneos_de_entrenamiento(
-        estrategia, 
-        estrategias_a_enfrentar, 
-        metrica_a_guardar, 
-        episodios_por_torneo=100, 
-        cantidad_repeticiones_de_torneos=100, 
-        cantidad_de_torneos=50,
-        guardado_cada_n_torneos=10, 
-        limite_de_variacion_de_jugadas=0
-        ) -> pd.DataFrame:
+def torneos_de_entrenamiento(args) -> pd.DataFrame:
+    estrategia, metrica_a_guardar, seed, episodios_por_torneo, limite_de_variacion_de_jugadas, cantidad_repeticiones_de_torneos, guardado_cada_n_torneos = args
+    estrategias_a_enfrentar = [
+        TitForTat(),
+        SiempreCoopera(),
+        SiempreTraiciona(),
+        Random(),
+        Davis(),
+        Downing(),
+        Feld(),
+        Grofman(),
+        Joss(),
+        Shubik(),
+        SteinRapoport(),
+        TidemanChieruzzi(),
+        Tullock(),
+        Nydegger(),
+        Graaskamp(),
+        Grudger(),
+        Anonymous()
+    ]
+
+    random.seed(seed)
 
     estrategias = estrategias_a_enfrentar.copy()
     estrategias.append(estrategia)
 
-    df = pd.DataFrame(columns=["estrategia", "n_torneo", "perdida", "exploracion", "puntaje_torneo", "puntaje_acumulado"])
+    df = pd.DataFrame(columns=["estrategia", "n_torneo", "perdida", "exploracion", "puntaje_torneo", "puntaje_acumulado", "seed"])
 
 
     # ejecutar los torneos 1 contra todos
@@ -41,7 +57,7 @@ def torneos_de_entrenamiento(
 
         controlador = ControladorDuelos(
             estrategias_a_enfrentar=estrategias,
-            cantidad_de_torneos=cantidad_de_torneos,
+            cantidad_de_torneos=1,
             jugadas_base_duelo=episodios_por_torneo,
             limite_de_variacion_de_jugadas=limite_de_variacion_de_jugadas,
             selector_de_oponentes=SelectorAllForOne(estrategia)
@@ -54,7 +70,8 @@ def torneos_de_entrenamiento(
             fila = {"estrategia": estrategia.__class__.__name__,
                     "n_torneo": torneo + 1,
                     "puntaje_torneo": estrategia.puntaje_torneo_actual,
-                    "puntaje_acumulado": analisis[estrategia.__class__.__name__]
+                    "puntaje_acumulado": analisis[estrategia.__class__.__name__],
+                    "seed": seed
                     }
             
             # Obtener la métrica solicitada; si no existe, no agregar fila
@@ -88,25 +105,6 @@ if __name__ == "__main__":
     jugadas_base_duelo = 10                  ## cantidad de jugadas base por duelo
     limite_de_variacion_de_jugadas = 10      ## limite de variacion aleatoria en la cantidad de jugadas por duelo
 
-    estrategias_a_enfrentar = [
-        TitForTat(),
-        SiempreCoopera(),
-        SiempreTraiciona(),
-        Random(),
-        Davis(),
-        Downing(),
-        Feld(),
-        Grofman(),
-        Joss(),
-        Shubik(),
-        SteinRapoport(),
-        TidemanChieruzzi(),
-        Tullock(),
-        Nydegger(),
-        Graaskamp(),
-        Grudger(),
-        Anonymous()
-    ]
 
     protas = [
         [DeepQNetwork(
@@ -115,27 +113,28 @@ if __name__ == "__main__":
             gamma=float(1 - (1 / jugadas_base_duelo)),
             use_opponent_context=True,
         ), Metrica.PERDIDA],
-        [A2C(), Metrica.PERDIDA],
-        [DuelingDQN(), Metrica.PERDIDA],
-        [A2C_LSTM(), Metrica.PERDIDA],
+        [QLearning(EpsilonGreedy(),HistoryStatState()),Metrica.EXPLORACION],
     ]
 
     dataf = pd.DataFrame()
+    seeds = [1 , 2, 3, 4]
+    tasks = []
+    for prota in protas:
+        for seed in seeds:
+            if prota[1] == Metrica.PERDIDA:
+                tasks.append((prota[0], prota[1] ,seed,1000, 50 ,1, 100))
+            else:
+                tasks.append((prota[0], prota[1] ,seed,1000, 50, 1000, 100000))
 
-    # Ejecutar los torneos de entrenamiento para cada protagonista
-    for prota, metrica in protas:
-      
-        # Ejecutar los torneos de entrenamiento
-        resultado = torneos_de_entrenamiento(
-            prota,
-            estrategias_a_enfrentar,
-            metrica, 
-            cantidad_repeticiones_de_torneos=cantidad_repeticiones_de_torneos,
-            cantidad_de_torneos=cantidad_de_torneos,
-            guardado_cada_n_torneos=guardado_cada_n_torneos
-        )
-            
-        print(resultado)
-        dataf = pd.concat([dataf, resultado], ignore_index=True)
+    print(f"Ejecutando {len(tasks)} experimentos en paralelo...")
 
-    dataf.to_csv("resultados_arco_de_entrenamiento_.csv", index=False)
+    # Usa todos los cores disponibles menos 1
+    n_workers = max(cpu_count() - 2, 1)
+    print(f"Usando {n_workers} procesos")
+
+    rows = []
+    with Pool(n_workers) as pool:
+        for result in tqdm(pool.imap_unordered(torneos_de_entrenamiento, tasks), total=len(tasks)):
+            dataf = pd.concat([dataf, result], ignore_index=True)
+    dataf.to_csv("resultados_arco_de_entrenamiento_CAMBIAR_NOMBRE.csv", index=False)
+
