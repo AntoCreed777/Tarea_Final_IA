@@ -256,6 +256,7 @@ class DeepQNetwork(base_strategies):
         self.use_opponent_context = use_opponent_context
         self.context_window = context_window
         self.actual_loss = 0.0
+        self.frozen = False
 
     def _context_features(self) -> np.ndarray:
         """
@@ -408,7 +409,7 @@ class DeepQNetwork(base_strategies):
         3. Se construye el objetivo y se optimiza la red de política mediante
            pérdida Huber (SmoothL1Loss).
         """
-        if len(self.replay) < self.batch_size:
+        if self.frozen or len(self.replay) < self.batch_size:
             return
         s, a, r, s2, done = self.replay.sample(self.batch_size)
 
@@ -463,12 +464,16 @@ class DeepQNetwork(base_strategies):
         return "\033[34m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
 
     def freeze(self):
-        """Congela los parámetros de la red para evitar más entrenamientos."""
+        """Congela los parámetros de la red y deshabilita entrenamiento."""
+        self.policy_net.eval()
+        self.frozen = True
         for param in self.policy_net.parameters():
             param.requires_grad = False
 
     def unfreeze(self):
-        """Descongela los parámetros de la red para permitir entrenamientos."""
+        """Descongela los parámetros de la red y habilita entrenamiento."""
+        self.policy_net.train()
+        self.frozen = False
         for param in self.policy_net.parameters():
             param.requires_grad = True
 
