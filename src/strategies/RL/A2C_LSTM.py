@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pickle 
+import os
 
 from src.elecciones import Elecciones
 from src.strategies.base_class import base_strategies
@@ -112,6 +114,8 @@ class A2C_LSTM(base_strategies):
         self.reset_memory_on_new_opponent = reset_memory_on_new_opponent
         self.reset_history_on_new_opponent = reset_history_on_new_opponent
 
+        self.actual_loss = 0.0
+
     # --------------------------------------------------------
     #                   ELEGIR ACCIÓN
     # --------------------------------------------------------
@@ -187,6 +191,7 @@ class A2C_LSTM(base_strategies):
         value_loss = (value_pred.squeeze() - td_target) ** 2
 
         loss = policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy
+        self.actual_loss = loss.item()
 
         self.opt.zero_grad()
         loss.backward()
@@ -220,3 +225,35 @@ class A2C_LSTM(base_strategies):
 
     def get_puntaje_de_este_torneo(self) -> str:
         return "\033[95m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
+
+    def get_loss(self) -> float:
+        """
+        Retorna el valor de pérdida (loss) del último paso de optimización.
+        Returns:
+            float: Valor de pérdida del último paso de optimización.
+        """
+        return self.actual_loss
+    
+    def freeze(self):
+        """
+        Congela el aprendizaje del agente y guarda su configuración
+        de aprendizaje
+        """
+        #Guardar su configuración por si se requiere descongelar el entrenamiento
+        for param in self.net.parameters():
+            param.requires_grad = False
+
+    def save(self, file : str) -> None:
+        """
+        Exporta la QTable para futuros agentes
+        """
+        # Crear carpeta si no existe
+        os.makedirs("QTables", exist_ok=True)
+
+        with open(f"Qtables/{file}.pkl", "wb") as f:
+            pickle.dump(self, f)
+
+    @staticmethod 
+    def load(path):
+        with open(path, 'rb') as f: 
+            return pickle.load(f)

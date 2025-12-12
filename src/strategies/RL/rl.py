@@ -135,7 +135,7 @@ class ReinforcementLearning( base_strategies ,ABC):
         """
         self._iniciar_variables()
 
-    def export_QTable(self, file : str) -> None:
+    def save(self, file : str) -> None:
         """
         Exporta la QTable para futuros agentes
         """
@@ -143,16 +143,13 @@ class ReinforcementLearning( base_strategies ,ABC):
         os.makedirs("QTables", exist_ok=True)
 
         with open(f"Qtables/{file}.pkl", "wb") as f:
-            pickle.dump(self.q_table, f)
+            pickle.dump(self, f)
 
-    def import_QTable(self, file : str) -> None:
-        """
-        Importa la QTable desde un archivo para su uso
-        """
-
-        with open(f"{file}.pkl", "rb") as f:
-            self.q_table = pickle.load(f)
-
+    @staticmethod 
+    def load(path):
+        with open(path, 'rb') as f: 
+            return pickle.load(f)
+        
     def porcentaje_explorado(self) -> float:
         """
         Función para calcular la proporción de estados alcanzados en total

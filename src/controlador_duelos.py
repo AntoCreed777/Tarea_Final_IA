@@ -119,15 +119,8 @@ class ControladorDuelos:
                 self._preparar_duelo(e1, e2, duelos)
 
             # Paralelizar los duelos
-            with ThreadPoolExecutor() as executor:
-                """
-                Ejecuta todos los duelos en paralelo usando hilos.
-
-                Cada duelo se pasa como argumento a la función `duelo`.
-                ThreadPoolExecutor se encarga de crear hilos y esperar que
-                todos los duelos terminen antes de continuar con el siguiente torneo.
-                """
-                executor.map(lambda args: self.duelo(*args), duelos)
+            for duelo in duelos:
+                self.duelo(*duelo)
 
             if verbose == True:
                 self._mostrar_puntajes()
@@ -181,10 +174,6 @@ class ControladorDuelos:
             estrategia2 (base_strategies): Segunda estrategia participante en el duelo.
             cantidad_jugadas (int): Número total de rondas que se jugarán en este duelo.
         """
-        first, second = sorted([estrategia1, estrategia2], key = id)
-
-        first._jugando.acquire()
-        second._jugando.acquire()
 
         estrategia1.notificar_nuevo_oponente()
         estrategia2.notificar_nuevo_oponente()
@@ -198,8 +187,6 @@ class ControladorDuelos:
 
             self.otorgar_recompensas(estrategia1, estrategia2, eleccion1, eleccion2)
 
-        first._jugando.release()
-        second._jugando.release()
 
     def _preparar_duelo(
         self,

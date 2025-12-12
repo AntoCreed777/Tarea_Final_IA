@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pickle 
+import os
 
 from src.elecciones import Elecciones
 from src.strategies.base_class import base_strategies
@@ -253,6 +255,7 @@ class DeepQNetwork(base_strategies):
         self.ultima_accion: Accion | None = None
         self.use_opponent_context = use_opponent_context
         self.context_window = context_window
+        self.actual_loss = 0.0
 
     def _context_features(self) -> np.ndarray:
         """
@@ -431,6 +434,17 @@ class DeepQNetwork(base_strategies):
         loss.backward()
         nn.utils.clip_grad_norm_(self.policy_net.parameters(), 5.0)
         self.optim.step()
+        self.actual_loss = loss.item()
+
+    def get_loss(self) -> float:
+        """
+        Retorna el historial de pérdidas (Huber/TD error) acumuladas por paso
+        de entrenamiento para poder graficar y evaluar convergencia.
+
+        Returns:
+            list[float]: Lista de valores de pérdida por cada _train_step.
+        """
+        return self.actual_loss
 
     def notificar_nuevo_oponente(self) -> None:
         """
@@ -447,3 +461,28 @@ class DeepQNetwork(base_strategies):
 
     def get_puntaje_de_este_torneo(self) -> str:
         return "\033[34m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
+
+    def freeze(self):
+        """Congela los parámetros de la red para evitar más entrenamientos."""
+        for param in self.policy_net.parameters():
+            param.requires_grad = False
+
+    def unfreeze(self):
+        """Descongela los parámetros de la red para permitir entrenamientos."""
+        for param in self.policy_net.parameters():
+            param.requires_grad = True
+
+    def save(self, file : str) -> None:
+        """
+        Exporta la QTable para futuros agentes
+        """
+        # Crear carpeta si no existe
+        os.makedirs("QTables", exist_ok=True)
+
+        with open(f"Qtables/{file}.pkl", "wb") as f:
+            pickle.dump(self, f)
+
+    @staticmethod 
+    def load(path):
+        with open(path, 'rb') as f: 
+            return pickle.load(f)

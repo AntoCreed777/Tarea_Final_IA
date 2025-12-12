@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import pickle 
+import os
 
 from src.elecciones import Elecciones
 from src.strategies.base_class import base_strategies
@@ -229,11 +231,7 @@ class DuelingDQN(base_strategies):
 
         # loss
         self.loss_fn = nn.SmoothL1Loss()
-
-        # print device
-        print(
-            f"[DuelingDQN] device={self.device}, input_dim={input_dim}, hidden={hidden}"
-        )
+        self.actual_loss = 0.0
 
     # -------------------------
     # context features (oponente)
@@ -376,6 +374,7 @@ class DuelingDQN(base_strategies):
             target = r_v + self.gamma * next_q_target * (1.0 - done_v)
 
         loss = self.loss_fn(q_vals, target)
+        self.actual_loss = loss.item()
 
         self.optim.zero_grad()
         loss.backward()
@@ -389,12 +388,48 @@ class DuelingDQN(base_strategies):
         self.historial = []
         self.ultimo_estado = None
         self.ultima_accion = None
-        # Si quieres que el aprendizaje sea continuo entre oponentes, deja el replay intacto.
-        # Si prefieres que el agente empiece desde cero contra cada nuevo oponente:
-        # self.replay = ReplayBuffer(self.replay.buf.maxlen)
 
     def get_puntaje_acumulado(self) -> str:
         return "\033[36m" + f"{super().get_puntaje_acumulado()}" + "\033[0m"
 
     def get_puntaje_de_este_torneo(self) -> str:
         return "\033[36m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
+
+    def get_loss(self) -> float:
+        """
+        Retorna el valor de pérdida (loss) del último paso de optimización.
+        Returns:
+            float: Valor de pérdida del último paso de optimización.
+        """
+        return self.actual_loss
+    
+    def freeze(self):
+        """
+        Congela el aprendizaje del agente y guarda su configuración
+        de aprendizaje
+        """
+        for param in self.policy_net.parameters():
+            param.requires_grad = False
+
+    def unfreeze(self):
+        """
+        Descongela el aprendizaje del agente para reanudar su configuración
+        de aprendizaje
+        """
+        for param in self.policy_net.parameters():
+            param.requires_grad = True
+        
+    def save(self, file : str) -> None:
+        """
+        Exporta la QTable para futuros agentes
+        """
+        # Crear carpeta si no existe
+        os.makedirs("QTables", exist_ok=True)
+
+        with open(f"Qtables/{file}.pkl", "wb") as f:
+            pickle.dump(self, f)
+
+    @staticmethod 
+    def load(path):
+        with open(path, 'rb') as f: 
+            return pickle.load(f)

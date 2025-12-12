@@ -1,6 +1,6 @@
 import random
 from collections import deque
-from matplotlib.pylab import chisquare
+import math
 from src.elecciones import Elecciones
 from src.strategies.base_class import base_strategies
 
@@ -57,9 +57,21 @@ class Graaskamp(base_strategies):
             self.historial_propio.append(decision)
             return decision
 
-        # Evaluar aleatoriedad del oponente
-        _, p_value = chisquare([self.cooperaciones_oponente, self.traiciones_oponente])
-        self.oponente_es_random = p_value >= self.alfa
+        # Evaluar aleatoriedad del oponente (chi-cuadrado de 2 categorías, df=1)
+        # Usamos un test contra distribución uniforme (0.5/0.5) sin dependencia externa.
+        total = self.cooperaciones_oponente + self.traiciones_oponente
+        if total >= 2:
+            exp = total / 2.0
+            # estadístico chi-cuadrado: sum((obs-exp)^2 / exp)
+            stat = ((self.cooperaciones_oponente - exp) ** 2) / exp + (
+                (self.traiciones_oponente - exp) ** 2
+            ) / exp
+            # Para df=1, CDF(x) = erf(sqrt(x/2)); p-value = 1 - CDF
+            p_value = 1.0 - math.erf(math.sqrt(max(0.0, stat) / 2.0))
+            self.oponente_es_random = p_value >= self.alfa
+        else:
+            # Insuficientes datos: no concluir aleatoriedad
+            self.oponente_es_random = False
 
         if self.oponente_es_random:
             self.ultimo_movimiento_propio = Elecciones.TRAICIONAR

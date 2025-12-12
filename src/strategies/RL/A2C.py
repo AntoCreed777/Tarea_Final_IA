@@ -5,6 +5,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pickle 
+import os
 
 from src.elecciones import Elecciones
 from src.strategies.base_class import base_strategies
@@ -153,6 +155,7 @@ class A2C(base_strategies):
         self.ultimo_estado_vec = None
         self.ultima_accion = None
         self.ultimo_valor = None
+        self.actual_loss = 0.0
 
     def realizar_eleccion(self) -> Elecciones:
         """
@@ -257,6 +260,7 @@ class A2C(base_strategies):
         loss.backward()
         nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
         self.opt.step()
+        self.actual_loss = loss.item()
 
         # limpiar últimos
         self.ultimo_estado_vec = None
@@ -277,3 +281,36 @@ class A2C(base_strategies):
 
     def get_puntaje_de_este_torneo(self) -> str:
         return "\033[35m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
+
+    def get_loss(self) -> float:
+        """
+        Retorna el valor de pérdida (loss) del último paso de optimización.
+        Returns:
+            float: Valor de pérdida del último paso de optimización.
+        """
+        return self.actual_loss
+    
+    def freeze(self):
+        """Congela los parámetros de la red para evitar más entrenamientos."""
+        for param in self.net.parameters():
+            param.requires_grad = False
+    
+    def unfreeze(self):
+        """Descongela los parámetros de la red para permitir entrenamientos."""
+        for param in self.net.parameters():
+            param.requires_grad = True
+
+    def save(self, file : str) -> None:
+        """
+        Exporta la QTable para futuros agentes
+        """
+        # Crear carpeta si no existe
+        os.makedirs("QTables", exist_ok=True)
+
+        with open(f"Qtables/{file}.pkl", "wb") as f:
+            pickle.dump(self, f)
+
+    @staticmethod 
+    def load(path):
+        with open(path, 'rb') as f: 
+            return pickle.load(f)
