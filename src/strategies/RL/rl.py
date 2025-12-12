@@ -135,20 +135,37 @@ class ReinforcementLearning( base_strategies ,ABC):
         """
         self._iniciar_variables()
 
-    def save(self, file : str) -> None:
+    def save(self, file: str) -> None:
         """
-        Exporta la QTable para futuros agentes
+        Guarda el estado del agente basado en Q-Table de forma segura.
+
+        Se serializa solamente:
+        - Q-Table
+        - hiperparámetros básicos (alpha, gamma)
+        - contadores simples (_estados_alcanzados)
+        NOTA: No se serializan `policy` ni `gestor_estado` para evitar objetos
+        no serializables. Se espera reconstruirlos en tiempo de carga.
         """
-        # Crear carpeta si no existe
         os.makedirs("QTables", exist_ok=True)
+        payload = {
+            "q_table": self.q_table,
+            "alpha": self.alpha,
+            "gamma": self.gamma,
+            "estados_alcanzados": self._estados_alcanzados,
+        }
+        # Usamos pickle para dict puro o torch.save; ambos válidos. Elegimos torch.save por consistencia.
+        import torch
+        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
 
-        with open(f"Qtables/{file}.pkl", "wb") as f:
-            pickle.dump(self, f)
-
-    @staticmethod 
-    def load(path):
-        with open(path, 'rb') as f: 
-            return pickle.load(f)
+    @staticmethod
+    def load(path: str) -> dict:
+        """
+        Carga un payload guardado por `save` y retorna el dict con la Q-Table
+        y parámetros. El llamador debe aplicar estos valores a una instancia.
+        """
+        import torch
+        payload = torch.load(path, map_location="cpu")
+        return payload
         
     def porcentaje_explorado(self) -> float:
         """

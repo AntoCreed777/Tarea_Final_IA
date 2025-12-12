@@ -424,17 +424,68 @@ class DuelingDQN(base_strategies):
         for param in self.policy_net.parameters():
             param.requires_grad = True
         
-    def save(self, file : str) -> None:
+    def save(self, file: str) -> None:
         """
-        Exporta la QTable para futuros agentes
+        Guarda el estado del agente DuelingDQN de forma segura usando `torch.save`.
         """
-        # Crear carpeta si no existe
         os.makedirs("QTables", exist_ok=True)
 
-        with open(f"Qtables/{file}.pkl", "wb") as f:
-            pickle.dump(self, f)
+        payload = {
+            "config": {
+                "tamaño_estado": self.tamaño_estado,
+                "gamma": self.gamma,
+                "replay_capacity": self.replay.buf.maxlen if hasattr(self.replay, "buf") else None,
+                "batch_size": self.batch_size,
+                "tau": self.tau,
+                "use_opponent_context": self.use_opponent_context,
+                "context_window": self.context_window,
+            },
+            "policy_state": self.policy_net.state_dict(),
+            "target_state": self.target_net.state_dict(),
+            "optim_state": self.optim.state_dict(),
+            "metrics": {"actual_loss": self.actual_loss, "step_count": self.step_count},
+        }
 
-    @staticmethod 
-    def load(path):
-        with open(path, 'rb') as f: 
-            return pickle.load(f)
+        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
+
+    @staticmethod
+    def load(path: str, device: str | None = None) -> "DuelingDQN":
+        payload = torch.load(path, map_location="cpu")
+        cfg = payload.get("config", {})
+
+        agent = DuelingDQN(
+            tamaño_estado=cfg.get("tamaño_estado", 5),
+            gamma=cfg.get("gamma", 0.95),
+            replay_capacity=cfg.get("replay_capacity", 20000) or 20000,
+            batch_size=cfg.get("batch_size", 128),
+            tau=cfg.get("tau", 0.005),
+            device=device,
+            use_opponent_context=cfg.get("use_opponent_context", False),
+            context_window=cfg.get("context_window", 10),
+        )
+
+        policy_state = payload.get("policy_state")
+        target_state = payload.get("target_state")
+        if policy_state:
+            agent.policy_net.load_state_dict(policy_state)
+        if target_state:
+            agent.target_net.load_state_dict(target_state)
+
+        optim_state = payload.get("optim_state")
+        if optim_state:
+            agent.optim.load_state_dict(optim_state)
+
+        metrics = payload.get("metrics", {})
+        agent.actual_loss = metrics.get("actual_loss", 0.0)
+        agent.step_count = metrics.get("step_count", 0)
+
+        if device:
+            agent.device = (
+                torch.device(device)
+                if device
+                else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+            )
+            agent.policy_net.to(agent.device)
+            agent.target_net.to(agent.device)
+
+        return agent

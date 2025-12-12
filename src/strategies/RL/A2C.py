@@ -313,17 +313,58 @@ class A2C(base_strategies):
         for param in self.net.parameters():
             param.requires_grad = True
 
-    def save(self, file : str) -> None:
+    def save(self, file: str) -> None:
         """
-        Exporta la QTable para futuros agentes
+        Guarda el estado del agente A2C de forma segura usando `torch.save`.
         """
-        # Crear carpeta si no existe
         os.makedirs("QTables", exist_ok=True)
 
-        with open(f"Qtables/{file}.pkl", "wb") as f:
-            pickle.dump(self, f)
+        payload = {
+            "config": {
+                "tamaño_estado": self.tamaño_estado,
+                "lr": self.opt.param_groups[0].get("lr", 1e-3),
+                "gamma": self.gamma,
+                "entropy_coef": self.entropy_coef,
+                "value_coef": self.value_coef,
+            },
+            "model_state": self.net.state_dict(),
+            "optim_state": self.opt.state_dict(),
+            "metrics": {"actual_loss": self.actual_loss},
+        }
 
-    @staticmethod 
-    def load(path):
-        with open(path, 'rb') as f: 
-            return pickle.load(f)
+        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
+
+    @staticmethod
+    def load(path: str, device: Optional[str] = None) -> "A2C":
+        payload = torch.load(path, map_location="cpu")
+        cfg = payload.get("config", {})
+
+        agent = A2C(
+            tamaño_estado=cfg.get("tamaño_estado", 5),
+            lr=cfg.get("lr", 1e-3),
+            gamma=cfg.get("gamma", 0.95),
+            entropy_coef=cfg.get("entropy_coef", 1e-3),
+            value_coef=cfg.get("value_coef", 0.5),
+            device=device,
+        )
+
+        model_state = payload.get("model_state")
+        if model_state:
+            agent.net.load_state_dict(model_state)
+
+        optim_state = payload.get("optim_state")
+        if optim_state:
+            agent.opt.load_state_dict(optim_state)
+
+        metrics = payload.get("metrics", {})
+        agent.actual_loss = metrics.get("actual_loss", 0.0)
+
+        if device:
+            agent.device = (
+                torch.device(device)
+                if device
+                else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+            )
+            agent.net.to(agent.device)
+
+        return agent
