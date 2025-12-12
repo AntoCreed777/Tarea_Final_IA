@@ -23,9 +23,9 @@ __all__ = [
     "Graaskamp",
     "Grudger",
     "Nydegger",
-    "Anonymous"
+    "Anonymous",
     "QLearning",
-    "SARSA"
+    "SARSA",
     "DeepQNetwork",
     "A2C",
     "DuelingDQN",
