@@ -1,10 +1,10 @@
 ## 📋 Requisitos Previos
 
-e:
-
 - **Python 3.12+**  
 - Tener instalado **pdm**, puedes consultar en https://pdm-project.org/en/latest/#__tabbed_1_2
 - Puedes instalar los paquetes requeridos con `pdm install`, de otra forma puedes hacerlo manualmente según lo descrito en el archivo `pyproject.toml`
+
+## Modo de uso
 
 Para iniciar el torneo de todos contra todos:
 
