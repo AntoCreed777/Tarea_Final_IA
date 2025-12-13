@@ -20,10 +20,18 @@ Estado = tuple[Jugada, ...]
 Accion = Elecciones
 
 
-# -------------------------
-# Estado: codificación simple
-# -------------------------
 def encode_estado(historial: list[Jugada], tamaño_estado: int) -> np.ndarray:
+    """
+    Codifica el historial reciente en un vector de características.
+    Cada jugada se representa con dos valores:
+    - 0.0 para COOPERAR
+    - 1.0 para TRAICIONAR
+    Args:
+        historial (list[Jugada]): Historial de jugadas (propias y del oponente).
+        tamaño_estado (int): Número de rondas recientes a codificar.
+        Returns:
+        np.ndarray: Vector de características de tamaño (tamaño_estado * 2,).
+    """
     recent = historial[-tamaño_estado:]
     vec = np.zeros((tamaño_estado * 2,), dtype=np.float32)
     offset = tamaño_estado - len(recent)
@@ -34,11 +42,20 @@ def encode_estado(historial: list[Jugada], tamaño_estado: int) -> np.ndarray:
     return vec
 
 
-# -------------------------
-# Noisy Linear (Factorized Gaussian Noise, Fortunato et al.)
-# -------------------------
 class NoisyLinear(nn.Module):
     def __init__(self, in_features: int, out_features: int, sigma_init: float = 0.017):
+        """
+        Capa lineal con ruido gaussiano factorizado (NoisyNet).
+
+        Args:
+            in_features (int): Dimensión de entrada.
+            out_features (int): Dimensión de salida.
+            sigma_init (float): Valor inicial para los parámetros sigma.
+
+        Notas:
+            - En modo `train`, se añade ruido paramétrico a pesos y sesgos.
+            - En modo `eval`, se usan los parámetros `mu` (sin ruido).
+        """
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -58,7 +75,7 @@ class NoisyLinear(nn.Module):
         self.reset_noise()
 
     def reset_parameters(self):
-        # Initialization from NoisyNet paper
+        # Inicialización según el paper de NoisyNet
         mu_range = 1.0 / math.sqrt(self.in_features)
         self.weight_mu.data.uniform_(-mu_range, mu_range)
         self.weight_sigma.data.fill_(self.sigma_init)
@@ -71,16 +88,23 @@ class NoisyLinear(nn.Module):
         return x.sign().mul_(x.abs().sqrt_())
 
     def reset_noise(self):
+        """Genera nuevo ruido para pesos y sesgos."""
         eps_in = self._scale_noise(self.in_features)
         eps_out = self._scale_noise(self.out_features)
-        # outer product = factorized gaussian
-        # use torch.outer to compute the outer product explicitly (avoids issues with .mm typing)
+        # Producto externo = ruido gaussiano factorizado
+        # torch.outer calcula explícitamente el producto externo.
         outer = torch.outer(eps_out, eps_in)
-        # copy_ updates the tensor contents in-place and avoids __setitem__ on Module typing
-        self.weight_epsilon.copy_(outer)
-        self.bias_epsilon.copy_(eps_out)
+        # copy_ actualiza el contenido in-place.
+        self.weight_epsilon.copy(outer)
+        self.bias_epsilon.copy(eps_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Aplica la capa lineal con/no sin ruido según el modo del módulo.
+
+        - En train(): W = W_mu + W_sigma * eps, b = b_mu + b_sigma * eps.
+        - En eval(): W = W_mu, b = b_mu.
+        """
         if self.training:
             weight = self.weight_mu + self.weight_sigma * self.weight_epsilon
             bias = self.bias_mu + self.bias_sigma * self.bias_epsilon
@@ -90,11 +114,21 @@ class NoisyLinear(nn.Module):
         return F.linear(x, weight, bias)
 
 
-# -------------------------
-# Dueling Q-network with Noisy layers
-# -------------------------
 class DuelingNoisyQNet(nn.Module):
     def __init__(self, input_dim: int, hidden: int = 128, n_actions: int = 2):
+        """
+        Red Dueling con capas Noisy.
+
+        Arquitectura:
+        - Bloque compartido: 2 capas NoisyLinear con ReLU.
+        - Cabeza de Valor V(s): NoisyLinear → ReLU → NoisyLinear(→1).
+        - Cabeza de Ventaja A(s,a): NoisyLinear → ReLU → NoisyLinear(→n_actions).
+
+        Args:
+            input_dim (int): Dimensión del estado de entrada.
+            hidden (int): Tamaño de capas ocultas.
+            n_actions (int): Número de acciones (2: cooperar/traicionar).
+        """
         super().__init__()
         # Shared feature layer
         self.fc1 = NoisyLinear(input_dim, hidden)
@@ -109,6 +143,10 @@ class DuelingNoisyQNet(nn.Module):
         self.adv_out = NoisyLinear(hidden, n_actions)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Combina Valor y Ventaja para estimar Q(s,a):
+        Q(s,a) = V(s) + (A(s,a) - mean_a A(s,a)).
+        """
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
 
@@ -123,7 +161,7 @@ class DuelingNoisyQNet(nn.Module):
         return q
 
     def reset_noise(self):
-        # reset noise in all NoisyLinear layers
+        """Reinicia el ruido en todas las capas NoisyLinear."""
         for m in self.modules():
             if isinstance(m, NoisyLinear):
                 m.reset_noise()
@@ -136,6 +174,11 @@ Transition = Tuple[np.ndarray, int, float, np.ndarray, bool]
 
 
 class ReplayBuffer:
+    """
+    Buffer de repetición para almacenar transiciones y muestrear lotes aleatorios.
+    Args:
+        capacity (int): Capacidad máxima del buffer.
+    """
     def __init__(self, capacity: int):
         self.buf: Deque[Transition] = deque(maxlen=capacity)
 
@@ -175,9 +218,34 @@ class DuelingDQN(base_strategies):
         context_window: int = 10,
     ):
         """
-        Dueling DQN con NoisyNet (Factorized Gaussian), Double DQN targets y soft updates.
-        - tamaño_estado: número de jugadas previas codificadas.
-        - use_opponent_context: añade 2 features extras (coop_rate, betray_flag).
+        Estrategia Dueling DQN con NoisyNet para el Dilema del Prisionero iterado.
+
+        Características clave:
+        - Dueling: separa Valor V(s) y Ventaja A(s,a) para estimar Q(s,a).
+        - NoisyNet: explora añadiendo ruido paramétrico a capas (sin epsilon explícito).
+        - Double DQN: acción siguiente desde `policy_net` y valor desde `target_net`.
+        - Soft update (`tau`): sincroniza progresivamente la red objetivo.
+
+        Args:
+            tamaño_estado (int): Rondas recientes codificadas en el estado.
+            gamma (float): Factor de descuento.
+            replay_capacity (int): Capacidad del buffer de repetición.
+            batch_size (int): Tamaño de lote para entrenamiento.
+            device (str | None): Dispositivo de ejecución.
+            tau (float): Tasa de actualización suave del target.
+            lr (float): Tasa de aprendizaje del optimizador Adam.
+            hidden (int): Tamaño oculto de la red dueling.
+            use_opponent_context (bool): Si añade contexto del oponente al estado.
+            context_window (int): Ventana para calcular el contexto del oponente.
+
+        Atributos:
+            policy_net (DuelingNoisyQNet): Red principal estimadora de Q.
+            target_net (DuelingNoisyQNet): Red objetivo para targets estables.
+            optim (optim.Optimizer): Optimizador Adam.
+            replay (ReplayBuffer): Memoria de transiciones.
+            historial (list[Jugada]): Historial del duelo actual.
+            actual_loss (float): Última pérdida (Huber) observada.
+            frozen (bool): Si el agente está congelado para evaluación.
         """
         super().__init__()
 
@@ -238,6 +306,14 @@ class DuelingDQN(base_strategies):
     # context features (oponente)
     # -------------------------
     def _context_features(self) -> np.ndarray:
+        """
+        Calcula características agregadas del comportamiento reciente del oponente:
+        - `coop_rate`: tasa de cooperación en la ventana `context_window`.
+        - `betray_flag`: indicador binario si hubo alguna traición reciente.
+
+        Returns:
+            np.ndarray: Vector `[coop_rate, betray_flag]` (float32).
+        """
         if not self.use_opponent_context:
             return np.zeros((0,), dtype=np.float32)
         window = self.historial[-self.context_window :]
@@ -253,7 +329,10 @@ class DuelingDQN(base_strategies):
     # elegir acción (sin epsilon)
     # -------------------------
     def _accion_from_policy(self, estado_vec: np.ndarray) -> Accion:
-        # reset noise so different evaluations produce exploration
+        """
+        Selecciona la acción greedily según Q(s,·) de la `policy_net`.
+        Se reinicia el ruido NoisyNet para mantener variabilidad en entrenamiento.
+        """
         self.policy_net.reset_noise()
         s_v = torch.tensor(
             estado_vec, dtype=torch.float32, device=self.device
@@ -279,6 +358,14 @@ class DuelingDQN(base_strategies):
     # recibir respuesta del oponente y entrenar
     # -------------------------
     def recibir_eleccion_del_oponente(self, eleccion: Elecciones) -> None:
+        """
+        Registra la transición observada, calcula la recompensa y ejecuta
+        un paso de entrenamiento (si hay suficientes muestras).
+
+        Notas:
+            - La recompensa se normaliza a [0,1] dividiendo por 5.
+            - El `done` se mantiene en False para duelos continuos.
+        """
         # si no había acción previa, registramos la jugada del oponente y salimos
         if self.ultimo_estado is None or self.ultima_accion is None:
             self.historial.append((Elecciones.COOPERAR, eleccion))
@@ -347,6 +434,17 @@ class DuelingDQN(base_strategies):
     # entrenamiento (Double DQN + Huber loss)
     # -------------------------
     def _train_step(self):
+        """
+        Entrenamiento de un paso con Double DQN y Huber loss.
+
+        Proceso:
+        1) Q(s,a) actual con `policy_net`.
+        2) Acción siguiente con `policy_net`, valor con `target_net` (Double DQN).
+        3) Objetivo TD y optimización con SmoothL1Loss.
+
+        Guardas:
+            - `self.actual_loss` con el valor de la pérdida del paso.
+        """
         if self.frozen or len(self.replay) < self.batch_size:
             return
 
@@ -386,6 +484,7 @@ class DuelingDQN(base_strategies):
     # reset para nuevo oponente
     # -------------------------
     def notificar_nuevo_oponente(self) -> None:
+        """Resetea el estado interno para comenzar contra un oponente nuevo."""
         self.historial = []
         self.ultimo_estado = None
         self.ultima_accion = None
@@ -397,28 +496,18 @@ class DuelingDQN(base_strategies):
         return "\033[36m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
 
     def get_loss(self) -> float:
-        """
-        Retorna el valor de pérdida (loss) del último paso de optimización.
-        Returns:
-            float: Valor de pérdida del último paso de optimización.
-        """
+        """Devuelve la última pérdida (Huber) registrada en entrenamiento."""
         return self.actual_loss
     
     def freeze(self):
-        """
-        Congela el aprendizaje del agente y guarda su configuración
-        de aprendizaje
-        """
+        """Congela el aprendizaje del agente y pone la red en modo evaluación."""
         self.policy_net.eval()
         self.frozen = True
         for param in self.policy_net.parameters():
             param.requires_grad = False
 
     def unfreeze(self):
-        """
-        Descongela el aprendizaje del agente para reanudar su configuración
-        de aprendizaje
-        """
+        """Descongela el agente y habilita nuevamente el entrenamiento."""
         self.policy_net.train()
         self.frozen = False
         for param in self.policy_net.parameters():

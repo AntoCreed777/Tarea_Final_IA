@@ -25,6 +25,18 @@ def encode_estado(historial, tamaño_estado):
 # ============================================================
 class ActorCriticLSTM(nn.Module):
     def __init__(self, input_dim: int, hidden: int = 64):
+        """
+        Red Actor-Crítico con una LSTM compartida para el Dilema del Prisionero.
+
+        Arquitectura:
+        - LSTM compartida: captura dependencias temporales del estado codificado.
+        - Política (actor): MLP sobre la última salida de la LSTM → logits (2).
+        - Valor (crítico): MLP sobre la última salida de la LSTM → V(s).
+
+        Args:
+            input_dim (int): Dimensión del estado de entrada (historial codificado).
+            hidden (int): Tamaño de la capa oculta y de la LSTM.
+        """
         super().__init__()
 
         self.hidden_size = hidden
@@ -46,8 +58,17 @@ class ActorCriticLSTM(nn.Module):
 
     def forward(self, x, hc):
         """
-        x: (batch=1, seq_len=1, input_dim)
-        hc: (h, c)
+        Forward con estado recurrente.
+
+        Args:
+            x (torch.Tensor): Tensor con forma (batch=1, seq_len=1, input_dim).
+            hc (Tuple[Tensor, Tensor]): Tupla (h, c) de la LSTM.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, Tuple[Tensor, Tensor]]:
+                - logits (1,2): Política categórica sobre acciones.
+                - value (1): Estimación V(s).
+                - hc: Nuevo estado oculto de la LSTM.
         """
         out, hc = self.lstm(x, hc)
         out = out[:, -1]  # última salida
@@ -57,6 +78,7 @@ class ActorCriticLSTM(nn.Module):
         return logits, value, hc
 
     def init_hidden(self, batch_size=1):
+        """Inicializa (h, c) en ceros para la LSTM."""
         h = torch.zeros(1, batch_size, self.hidden_size)
         c = torch.zeros(1, batch_size, self.hidden_size)
         return (h, c)
@@ -77,6 +99,33 @@ class A2C_LSTM(base_strategies):
         reset_memory_on_new_opponent: bool = True,
         reset_history_on_new_opponent: bool = True,
     ):
+        """
+        Estrategia A2C con LSTM compartida.
+
+        Características clave:
+        - Actor optimiza probabilidad de acciones con ventaja positiva.
+        - Crítico estima V(s) y reduce error MSE.
+        - LSTM permite memoria temporal más allá de la ventana fija.
+        - Entropía promueve exploración y evita colapso temprano.
+
+        Args:
+            tamaño_estado (int): Longitud de la ventana del historial codificado.
+            lr (float): Tasa de aprendizaje del optimizador Adam.
+            gamma (float): Factor de descuento para TD target.
+            entropy_coef (float): Coeficiente de entropía en la pérdida.
+            value_coef (float): Peso de la pérdida del crítico (MSE).
+            device (str | None): Dispositivo ('cuda'/'cpu').
+            reset_memory_on_new_opponent (bool): Si reinicia la LSTM por oponente.
+            reset_history_on_new_opponent (bool): Si limpia historial por oponente.
+
+        Atributos:
+            net (ActorCriticLSTM): Red actor-crítico recurrente.
+            opt (optim.Optimizer): Optimizador Adam.
+            historial (list): Historial de jugadas.
+            hc (Tuple[Tensor,Tensor]): Estado oculto actual de la LSTM.
+            actual_loss (float): Última pérdida registrada.
+            frozen (bool): Si el agente está congelado (sin entrenamiento).
+        """
         super().__init__()
         self.tamaño_estado = tamaño_estado
         self.gamma = gamma
@@ -121,6 +170,13 @@ class A2C_LSTM(base_strategies):
     #                   ELEGIR ACCIÓN
     # --------------------------------------------------------
     def realizar_eleccion(self) -> Elecciones:
+        """
+        Construye el estado actual, ejecuta la LSTM y muestrea una acción
+        de la política categórica. Guarda buffers necesarios para el update.
+
+        Returns:
+            Elecciones: Acción elegida (COOPERAR/TRAICIONAR).
+        """
         estado_vec = encode_estado(self.historial, self.tamaño_estado)
         x = torch.tensor(estado_vec, dtype=torch.float32, device=self.device)
         x = x.unsqueeze(0).unsqueeze(0)  # (1,1,input_dim)
@@ -145,6 +201,14 @@ class A2C_LSTM(base_strategies):
     #                   RECIBIR ACCIÓN OPONENTE
     # --------------------------------------------------------
     def recibir_eleccion_del_oponente(self, eleccion: Elecciones):
+        """
+        Recibe la acción del oponente, calcula TD target y ventaja,
+        y realiza un paso de optimización para actor y crítico.
+
+        Notas:
+            - En la primera ronda puede no existir `last_action`.
+            - Si `self.frozen` está activo, se omite el entrenamiento.
+        """
         if self.last_action is None:
             self.historial.append(
                 (Elecciones.COOPERAR, eleccion)
@@ -182,7 +246,7 @@ class A2C_LSTM(base_strategies):
             self.last_hc = None
             return
 
-        # entrenamiento
+        # entrenamiento (policy loss + value loss - entropy)
         s = torch.tensor(self.last_state_vec, dtype=torch.float32, device=self.device).unsqueeze(0).unsqueeze(0)
         logits, value_pred, _ = self.net(s, self.last_hc)
 
@@ -216,6 +280,10 @@ class A2C_LSTM(base_strategies):
     #              NUEVO OPONENTE (reset memoria LSTM)
     # --------------------------------------------------------
     def notificar_nuevo_oponente(self):
+        """
+        Notifica el inicio de un nuevo oponente.
+        Permite elegir si se resetea el historial externo y/o la memoria LSTM.
+        """
         # Controlar si se resetea historial y/o memoria LSTM entre oponentes
         if self.reset_history_on_new_opponent:
             self.historial = []
@@ -236,18 +304,11 @@ class A2C_LSTM(base_strategies):
         return "\033[95m" + f"{super().get_puntaje_de_este_torneo()}" + "\033[0m"
 
     def get_loss(self) -> float:
-        """
-        Retorna el valor de pérdida (loss) del último paso de optimización.
-        Returns:
-            float: Valor de pérdida del último paso de optimización.
-        """
+        """Devuelve la última pérdida registrada en entrenamiento."""
         return self.actual_loss
     
     def freeze(self):
-        """
-        Congela el aprendizaje del agente y guarda su configuración
-        de aprendizaje
-        """
+        """Congela el aprendizaje del agente y pone la red en modo evaluación."""
         self.net.eval()
         self.frozen = True
         for param in self.net.parameters():
