@@ -325,7 +325,7 @@ class A2C_LSTM(base_strategies):
         - métricas ligeras
         Evita picklear la instancia completa, que contiene locks/hilos no serializables.
         """
-        os.makedirs("QTables", exist_ok=True)
+        os.makedirs("Agentes", exist_ok=True)
 
         payload = {
             "config": {
@@ -344,7 +344,7 @@ class A2C_LSTM(base_strategies):
             },
         }
 
-        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
+        torch.save(payload, os.path.join("Agentes", f"{file}.pt"))
 
     @staticmethod
     def load(path: str, device: str | None = None) -> "A2C_LSTM":

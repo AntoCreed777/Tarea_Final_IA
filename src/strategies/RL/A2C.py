@@ -317,7 +317,7 @@ class A2C(base_strategies):
         """
         Guarda el estado del agente A2C de forma segura usando `torch.save`.
         """
-        os.makedirs("QTables", exist_ok=True)
+        os.makedirs("Agentes", exist_ok=True)
 
         payload = {
             "config": {
@@ -332,7 +332,7 @@ class A2C(base_strategies):
             "metrics": {"actual_loss": self.actual_loss},
         }
 
-        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
+        torch.save(payload, os.path.join("Agentes", f"{file}.pt"))
 
     @staticmethod
     def load(path: str, device: Optional[str] = None) -> "A2C":

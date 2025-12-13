@@ -95,8 +95,8 @@ class NoisyLinear(nn.Module):
         # torch.outer calcula explícitamente el producto externo.
         outer = torch.outer(eps_out, eps_in)
         # copy_ actualiza el contenido in-place.
-        self.weight_epsilon.copy(outer)
-        self.bias_epsilon.copy(eps_out)
+        self.weight_epsilon.copy_(outer)
+        self.bias_epsilon.copy_(eps_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -517,7 +517,7 @@ class DuelingDQN(base_strategies):
         """
         Guarda el estado del agente DuelingDQN de forma segura usando `torch.save`.
         """
-        os.makedirs("QTables", exist_ok=True)
+        os.makedirs("Agentes", exist_ok=True)
 
         payload = {
             "config": {
@@ -535,7 +535,7 @@ class DuelingDQN(base_strategies):
             "metrics": {"actual_loss": self.actual_loss, "step_count": self.step_count},
         }
 
-        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
+        torch.save(payload, os.path.join("Agentes", f"{file}.pt"))
 
     @staticmethod
     def load(path: str, device: str | None = None) -> "DuelingDQN":

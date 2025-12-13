@@ -491,7 +491,7 @@ class DeepQNetwork(base_strategies):
         Args:
             file (str): Nombre base del archivo a guardar (sin extensión).
         """
-        os.makedirs("QTables", exist_ok=True)
+        os.makedirs("Agentes", exist_ok=True)
 
         payload = {
             "config": {
@@ -518,7 +518,7 @@ class DeepQNetwork(base_strategies):
             },
         }
 
-        torch.save(payload, os.path.join("QTables", f"{file}.pt"))
+        torch.save(payload, os.path.join("Agentes", f"{file}.pt"))
 
     @staticmethod
     def load(path: str, device: str | None = None) -> "DeepQNetwork":

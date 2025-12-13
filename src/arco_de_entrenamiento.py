@@ -152,27 +152,25 @@ def torneos_de_entrenamiento(args) -> pd.DataFrame:
     return df
 
 if __name__ == "__main__":
-    #random.seed(42)
 
-    cantidad_repeticiones_de_torneos = 1     ## cuantas tandas 
-    cantidad_de_torneos = 1                  ## cuantos torneos por tanda
-    guardado_cada_n_torneos = 1              ## cada cuantos torneos guardar las metricas
-    jugadas_base_duelo = 10                  ## cantidad de jugadas base por duelo
-    limite_de_variacion_de_jugadas = 10      ## limite de variacion aleatoria en la cantidad de jugadas por duelo
-
-
-    protas = [["DeepQNetwork",Metrica.PERDIDA],
+    protas = [
+        #["LSTM", Metrica.PERDIDA],
+        #["A2C", Metrica.PERDIDA],
+        ["QLearning", Metrica.EXPLORACION],
+        #["SARSA", Metrica.EXPLORACION],
+        #["DeepQNetwork", Metrica.PERDIDA],
+        #["Dueling_dqn", Metrica.PERDIDA]
     ]
 
     dataf = pd.DataFrame()
-    seeds = [1 ]
+    seeds = [1]
     tasks = []
     for prota in protas:
         for seed in seeds:
             if prota[1] == Metrica.PERDIDA:
-                tasks.append((prota[0], prota[1] ,seed,200, 10 ,40, 1))
+                tasks.append((prota[0], prota[1] ,seed,200, 10 ,100, 1))
             else:
-                tasks.append((prota[0], prota[1] ,seed,1000, 50, 100000, 1000))
+                tasks.append((prota[0], prota[1] ,seed,200, 10, 100000, 1000))
 
     print(f"Ejecutando {len(tasks)} experimentos en paralelo...")
 
@@ -180,8 +178,9 @@ if __name__ == "__main__":
     n_workers = max(cpu_count() - 2, 1)
     print(f"Usando {n_workers} procesos")
 
-    # rows = []
+
     with Pool(n_workers) as pool:
-         for result in tqdm(pool.imap_unordered(torneos_de_entrenamiento, tasks), total=len(tasks)):
-             dataf = pd.concat([dataf, result], ignore_index=True)
+        for result in tqdm(pool.imap_unordered(torneos_de_entrenamiento, tasks), total=len(tasks)):
+            dataf = pd.concat([dataf, result], ignore_index=True)
+    
     dataf.to_csv("resultados_arco_de_entrenamiento_CAMBIAR_NOMBRE.csv", index=False)
